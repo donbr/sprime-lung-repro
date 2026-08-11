@@ -105,24 +105,44 @@ def main():
             if len(w) < a.min_lines or len(m) < a.min_lines:
                 continue
             dpd = float(w.mean() - m.mean())      # ΔpD; <0 => mutant more dependent
+            nan = float("nan")
             if mannwhitneyu is not None and len(w) and len(m):
-                p = float(mannwhitneyu(m, w, alternative="greater").pvalue)  # mutant more dependent
+                p_mut = float(mannwhitneyu(m, w, alternative="greater").pvalue)  # mutant more dependent
+                p_wt = float(mannwhitneyu(w, m, alternative="greater").pvalue)   # WT more dependent
+                p_two = float(mannwhitneyu(w, m, alternative="two-sided").pvalue)
             else:
-                p = float("nan")
-            pset.append((tgt, len(w), len(m), dpd, p))
+                p_mut = p_wt = p_two = nan
+            pset.append(dict(target=tgt, n_wt=len(w), n_mut=len(m), delta_pD=dpd,
+                             p_mut=p_mut, p_wt=p_wt, p_two=p_two))
         if pset:
-            q = bh_fdr([x[4] for x in pset]) if mannwhitneyu is not None else [float("nan")] * len(pset)
-            for (tgt, nw, nm, dpd, p), qq in zip(pset, q):
-                rows.append(dict(genotype=gene, target=tgt, n_wt=nw, n_mut=nm,
-                                 delta_pD=round(dpd, 3), mw_p=p, bh_q=round(float(qq), 3) if qq == qq else None,
-                                 mutant_selective=(dpd < 0 and (qq < 0.10 if qq == qq else False))))
+            # FDR within genotype, separately per hypothesis — a WT-selective target scores
+            # p_mut -> 1, so q_mut alone reads as "nothing here" when the effect is real.
+            for src, dst in (("p_mut", "q_mut"), ("p_wt", "q_wt"), ("p_two", "q_two")):
+                qs = (bh_fdr([r[src] for r in pset]) if mannwhitneyu is not None
+                      else [float("nan")] * len(pset))
+                for r, qq in zip(pset, qs):
+                    r[dst] = float(qq)
+            for r in pset:
+                q_mut, q_wt = r["q_mut"], r["q_wt"]
+                rows.append(dict(
+                    genotype=gene, target=r["target"], n_wt=r["n_wt"], n_mut=r["n_mut"],
+                    delta_pD=round(r["delta_pD"], 3),
+                    direction=("mutant-selective" if r["delta_pD"] < 0 else "WT-selective"),
+                    mw_p=r["p_mut"], bh_q=round(q_mut, 3) if q_mut == q_mut else None,
+                    p_wt=r["p_wt"], q_wt=round(q_wt, 4) if q_wt == q_wt else None,
+                    p_two=r["p_two"], q_two=round(r["q_two"], 4) if r["q_two"] == r["q_two"] else None,
+                    mutant_selective=(r["delta_pD"] < 0 and (q_mut < 0.10 if q_mut == q_mut else False)),
+                    wt_selective=(r["delta_pD"] > 0 and (q_wt < 0.10 if q_wt == q_wt else False))))
     res = pd.DataFrame(rows)
     if len(res):
         res = res.sort_values(["genotype", "delta_pD"])
         print(res.to_string(index=False))
         res.to_csv(os.path.join(a.out, "demeter_validation.csv"), index=False)
         print(f"\nwrote {a.out}/demeter_validation.csv")
-        print("ΔpD < 0 with q < 0.10 => mutant-selective RNAi dependency (validates the genotype axis, not the target).")
+        print("ΔpD < 0 with q_mut < 0.10 => mutant-selective RNAi dependency (validates the genotype axis, not the target).")
+        print("ΔpD > 0 with q_wt  < 0.10 => WT-selective (e.g. CDK4/6 under RB1 loss — a positive control).")
+        print("Read `direction` before any q: bh_q/q_mut test ONLY 'mutant more dependent', so a real")
+        print("WT-selective effect scores q_mut = 1.0. q_two is the two-sided test, the conservative one.")
     else:
         print("No target survived the min-lines filter; DEMETER2 lung coverage may be too thin for these genes.")
 
