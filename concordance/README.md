@@ -27,9 +27,9 @@ Reference targets expanded to all PRISM compounds annotated to them, restricted 
 
 | genotype | reference (in universe) | candidates | universe | recovered | recovery | hypergeometric p | permutation p |
 |---|---|---|---|---|---|---|---|
-| RB1 | 49 | 94 | 1360 | 10 | 20% | **0.0013** | **0.0015** |
+| RB1 | 49 | 94 | 1360 | 10 | 20% | **0.0013** | **0.0010** |
 | TP53 | 5 | 16 | 1402 | 4 | 80% | **5.6e-08** | **1e-4** |
-| PTEN | 10 | 97 | 883 | 2 | 20% | 0.30 | 0.29 |
+| PTEN | 10 | 97 | 883 | 2 | 20% | 0.30 | 0.30 |
 | CDKN2A | 0 | 48 | 1402 | 0 | n/a | — | — |
 
 **What this already shows** (and why it is more defensible than the circular 100%):

@@ -86,7 +86,10 @@ def main():
         hp = hyper_sf(k, N, K, nR) if nR else float("nan")
         # permutation: draw K random 'candidates' from universe, overlap with R
         if nR and K:
-            uni = list(universe); overlaps = np.empty(a.perm)
+            # sorted(), not list(): `universe` is a set of compound-name strings, and Python
+            # randomizes str hashing per process, so list() order — and therefore which
+            # compounds the seeded index draw maps to — changed on every run.
+            uni = sorted(universe); overlaps = np.empty(a.perm)
             for i in range(a.perm):
                 draw = set(rng.choice(len(uni), size=K, replace=False))
                 overlaps[i] = len(R & {uni[j] for j in draw})
