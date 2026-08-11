@@ -48,9 +48,10 @@ from random genotype labels, and thin sharply under a bootstrap-CI gate.
 ## Layout
 ```
 sprime-lung-repro/
-├── fetch_data.py            # deterministic downloader (figshare API + md5 verify)
+├── fetch_data.py            # deterministic downloader (version-pinned figshare API + md5 verify)
 ├── DOWNLOAD_CHECKLIST.md    # manual-download alternative, with checksums
 ├── sprime_core.py           # the metric + SL-window definitions (single source of truth)
+├── _common.py               # shared input-dir resolution + console encoding (stdlib only)
 ├── sprime_pipeline.py       # build S′ + genotype calls + validation → results/
 ├── blocking_analyses.py     # permutation null + line-centring
 ├── bootstrap_ci_gate.py     # per-compound bootstrap CI gate
@@ -63,7 +64,10 @@ sprime-lung-repro/
 
 ## Data & licensing
 Input data are public but redistributed under DepMap terms and are **not committed** (gitignored). Sources
-and checksums: `DOWNLOAD_CHECKLIST.md`. PRISM methodology: Corsello et al. 2020, *Nat Cancer*, PMID 32613204.
+and checksums: `DOWNLOAD_CHECKLIST.md`. Every input is resolved through a **version-pinned** figshare record
+and verified against a hard-pinned md5 before use, so a later data release cannot silently substitute itself;
+a file that fails verification is quarantined rather than left where the pipeline would read it.
+PRISM methodology: Corsello et al. 2020, *Nat Cancer*, PMID 32613204.
 Code is released under the MIT License (`LICENSE`). Mint a Zenodo DOI on a tagged release for citation.
 
 CI runs a synthetic-data smoke test only (the real 400 MB inputs cannot live in CI); see

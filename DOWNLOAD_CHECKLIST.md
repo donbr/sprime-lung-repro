@@ -27,10 +27,16 @@ before doing anything**, so the wrong release cannot slip in.
 
 ## Optional (only if re-running Supplement 8 genetic-dependency validation)
 
-| Portal selection | File | Notes |
-|---|---|---|
-| DEMETER2 (combined RNAi) | combined RNAi gene-dependency | negative = dependent; align sign before use |
-| DepMap CRISPR (24Q2) `CRISPRGeneDependency.csv` | gene-dependency probabilities | positive = dependent |
+| Source | Save as (in `data_sources/`) | Size (bytes) | md5 |
+|---|---|---|---|
+| **DEMETER2 data v6** ([doi:10.6084/m9.figshare.6025238.v6](https://doi.org/10.6084/m9.figshare.6025238.v6)) → *combined RNAi gene dependency* | `D2_combined_gene_dep_scores.csv` | 160,616,970 | `e82566a48993753c20ea5f480f1867ec` |
+
+Genes are rows (`SYMBOL (ENTREZ)`), cell lines are columns (CCLE names); **negative = dependent**, and
+`demeter_validation.py` flips the sign for you. That script md5-verifies the file before use and refuses to
+run against an unpinned copy (override with `--skip-checksum`).
+
+Also usable, though not wired into a script: DepMap CRISPR (24Q2) `CRISPRGeneDependency.csv`
+(gene-dependency probabilities; positive = dependent).
 
 ## Verify after download
 
@@ -42,5 +48,7 @@ md5sum OmicsSomaticMutationsMatrixDamaging.csv               # expect 02f3568b71
 ```
 
 Both files are redistributed under DepMap terms; keep them out of version control (they are large).
-Provenance: PRISM methodology — Corsello et al. 2020, *Nat Cancer*, PMID 32613204; DepMap 24Q2 figshare
-doi:10.25452/figshare.plus.25880521.v1; DepMap 19Q4 figshare doi:10.6084/m9.figshare.11384241.v2.
+Provenance: PRISM methodology — Corsello et al. 2020, *Nat Cancer*, PMID 32613204; PRISM Repurposing 19Q4
+figshare doi:10.6084/m9.figshare.9393293.v4; DepMap 24Q2 figshare doi:10.25452/figshare.plus.25880521.v1.
+`fetch_data.py` resolves each file through the **version-pinned** figshare endpoint and checks it against
+the md5 above before writing it, so a later release cannot silently substitute itself.

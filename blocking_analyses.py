@@ -9,6 +9,10 @@ Usage:  python blocking_analyses.py [--out DIR] [--perm 2000] [--seed 20260811]
 """
 import argparse, os, sys
 import numpy as np, pandas as pd
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import safe_stdout
+safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
 MINN = 3

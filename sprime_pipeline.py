@@ -12,6 +12,8 @@ import argparse, hashlib, os, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import sprime_core
+from _common import default_data_dir, safe_stdout
+safe_stdout()
 
 GENES = {"PTEN": "PTEN (5728)", "CDKN2A": "CDKN2A (1029)", "RB1": "RB1 (5925)", "TP53": "TP53 (7157)"}
 PRISM_FILE = "secondary-screen-dose-response-curve-parameters.csv"
@@ -31,12 +33,6 @@ def md5(path, chunk=1 << 20):
     return h.hexdigest()
 
 def log(*a): print(*a, flush=True)
-
-def default_data_dir(here):
-    """data_sources/ inside the repo (where fetch_data.py writes); else the sibling layout."""
-    inside = os.path.join(here, "data_sources")
-    sibling = os.path.join(here, "..", "data_sources")
-    return sibling if not os.path.isdir(inside) and os.path.isdir(sibling) else inside
 
 def main():
     ap = argparse.ArgumentParser()

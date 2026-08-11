@@ -4,14 +4,9 @@ Usage:  python run_all.py [--data DIR] [--mutations FILE] [--perm N]
 Exits non-zero if inputs are missing / wrong release or validation fails.
 """
 import argparse, os, subprocess, sys
-
-# Kept in sync with sprime_pipeline.default_data_dir; inlined so this launcher
-# stays importable without numpy/pandas.
-def default_data_dir(here):
-    """data_sources/ inside the repo (where fetch_data.py writes); else the sibling layout."""
-    inside = os.path.join(here, "data_sources")
-    sibling = os.path.join(here, "..", "data_sources")
-    return sibling if not os.path.isdir(inside) and os.path.isdir(sibling) else inside
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import default_data_dir, safe_stdout
+safe_stdout()
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))

@@ -23,6 +23,6 @@ jobs:
       - name: Install (numpy/pandas only; no network data)
         run: pip install numpy pandas
       - name: Syntax-check all scripts
-        run: python -m py_compile sprime_core.py sprime_pipeline.py blocking_analyses.py bootstrap_ci_gate.py demeter_validation.py fetch_data.py concordance/concordance_enrichment.py
+        run: python -m py_compile _paths.py sprime_core.py sprime_pipeline.py blocking_analyses.py bootstrap_ci_gate.py demeter_validation.py fetch_data.py run_all.py concordance/concordance_enrichment.py
       - name: Synthetic smoke test
         run: python tests/test_synthetic.py

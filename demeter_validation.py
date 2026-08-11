@@ -12,8 +12,14 @@ CCLE↔ACH map). Runs only when the DEMETER2 file is present; otherwise prints h
 
 Usage:  python demeter_validation.py [--genes AURKB AURKA PLK1 ...] [--reference concordance/reference_seed_grounded.csv]
 """
-import argparse, os, re, sys
+import argparse, hashlib, os, re, sys
 import numpy as np, pandas as pd
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import default_data_dir, safe_stdout
+safe_stdout()
+
+# DEMETER2 v6 combined gene dep scores (doi:10.6084/m9.figshare.6025238.v6) — same pin as fetch_data.py.
+DEMETER_MD5 = "e82566a48993753c20ea5f480f1867ec"
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
 DEFAULT_TARGETS = ["AURKB", "AURKA", "PLK1", "CHEK1", "PARP1", "KIF11", "AKT1", "SKP2", "CCNE2", "E2F4", "CDK4", "CDK6"]
@@ -21,6 +27,13 @@ try:
     from scipy.stats import mannwhitneyu
 except Exception:
     mannwhitneyu = None
+
+def md5sum(path, chunk=1 << 20):
+    h = hashlib.md5()
+    with open(path, "rb") as f:
+        for b in iter(lambda: f.read(chunk), b""):
+            h.update(b)
+    return h.hexdigest()
 
 def bh_fdr(pvals):
     p = np.asarray(pvals, float); n = len(p); order = np.argsort(p)
@@ -32,19 +45,27 @@ def bh_fdr(pvals):
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default=os.path.join(here, "data_sources"))
+    ap.add_argument("--data", default=default_data_dir(here))
     ap.add_argument("--derived", default=os.path.join(here, "results"))
     ap.add_argument("--out", default=os.path.join(here, "results"))
     ap.add_argument("--demeter", default="D2_combined_gene_dep_scores.csv")
     ap.add_argument("--genes", nargs="*", default=None)
     ap.add_argument("--reference", default=None, help="pull target genes from a concordance reference CSV")
     ap.add_argument("--min-lines", type=int, default=5)
+    ap.add_argument("--skip-checksum", action="store_true", help="do not md5-verify the DEMETER2 matrix")
     a = ap.parse_args()
 
     dfile = os.path.join(a.data, a.demeter)
     if not os.path.exists(dfile):
         print(f"DEMETER2 file not found: {dfile}\n  Get it with:  python fetch_data.py --only demeter2_rnai")
         sys.exit(2)
+    if not a.skip_checksum and a.demeter == ap.get_default("demeter"):
+        got = md5sum(dfile)
+        if got != DEMETER_MD5:
+            print(f"DEMETER2 md5 MISMATCH: got {got}, expected {DEMETER_MD5}\n"
+                  f"  {dfile} is not the pinned DEMETER2 v6 release — refusing to validate against it.\n"
+                  f"  Re-fetch with:  python fetch_data.py --only demeter2_rnai   (or pass --skip-checksum)")
+            sys.exit(3)
 
     targets = a.genes or DEFAULT_TARGETS
     if a.reference and os.path.exists(a.reference):
