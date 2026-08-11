@@ -104,7 +104,7 @@ def main():
     for g in GENES:
         print(f"  {g:7}: {', '.join(misses_all[g]) if misses_all[g] else '(none)'}")
     print(f"\nwrote {a.out}/concordance_report.csv")
-    print("NOTE: run on the reference set provided; expand/free­ze the reference per the protocol before")
+    print("NOTE: run on the reference set provided; expand/freeze the reference per the protocol before")
     print("      treating these numbers as a validation benchmark.")
 
 if __name__ == "__main__":

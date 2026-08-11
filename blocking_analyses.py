@@ -83,7 +83,9 @@ def main():
     log("  Small offset + corr≈1 => no gross sensitivity confound; large raw→centred drop reflects the")
     log("  absolute pS'>0 gate (1uM / percent-Emax anchoring), not differential sensitivity.")
 
-    with open(os.path.join(a.out, "blocking_summary.txt"), "w") as f:
+    # explicit encoding: the summary contains ≈, →, S′ and would otherwise be written
+    # in the locale codec (cp1252 on Windows), which cannot encode them
+    with open(os.path.join(a.out, "blocking_summary.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     log(f"\nwrote {a.out}/candidate_null.csv, line_centring.csv, blocking_summary.txt")
 

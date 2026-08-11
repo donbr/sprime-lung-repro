@@ -35,6 +35,13 @@ def main():
     step3 = [py, os.path.join(here, "bootstrap_ci_gate.py"), "--derived", a.out, "--out", a.out]
     print("\n>>> STEP 3: bootstrap confidence-interval gate\n" + " ".join(step3))
     r3 = subprocess.run(step3)
+    # a failing step used to surface only as a bare non-zero exit, with the traceback
+    # scrolled off above the two later steps — say plainly which one broke
+    for name, rc in (("STEP 2 (blocking analyses)", r2.returncode),
+                     ("STEP 3 (bootstrap CI gate)", r3.returncode)):
+        if rc != 0:
+            print(f"\nrun_all: {name} FAILED (exit {rc}) — its outputs in {a.out} are missing or stale.")
+
     print("\n(Optional) literature-blind concordance:  "
           "python concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv")
     sys.exit(max(r2.returncode, r3.returncode))

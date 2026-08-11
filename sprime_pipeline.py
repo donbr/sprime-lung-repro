@@ -73,7 +73,11 @@ def main():
     lung = lung[lung.passed_str_profiling.astype(str).str.upper().isin(["TRUE", "1", "1.0"])]
     lung = lung[lung.screen_id.isin(["HTS002", "MTS010"])].copy()
     lung["rk"] = (lung.screen_id == "MTS010").astype(int)     # prefer MTS010 in the overlay
-    lung = lung.sort_values("rk").drop_duplicates(["depmap_id", "name"], keep="last")
+    # kind="stable": the default quicksort leaves the order of rk ties unspecified, so
+    # drop_duplicates(keep="last") could retain a different replicate between environments —
+    # same conclusions, but the derived tables would not be byte-reproducible.
+    lung = (lung.sort_values(["depmap_id", "name", "rk"], kind="stable")
+                .drop_duplicates(["depmap_id", "name"], keep="last"))
     emax_pct = (lung.upper_limit - lung.lower_limit) * 100.0   # signed; inhibition>0
     lung["sprime"] = sprime_core.sprime(emax_pct.to_numpy(), lung.ec50.to_numpy())   # canonical S′ definition
     log(f"  {lung.depmap_id.nunique()} lung lines, {len(lung)} compound-line pairs (HTS002+MTS010 overlay)")
@@ -105,9 +109,12 @@ def main():
     # ---- write derived tables ----
     keepcols = ["depmap_id", "ccle_name", "name", "moa", "target",
                 "upper_limit", "lower_limit", "ec50", "auc", "sprime"]
+    # canonical row order so the derived tables are byte-identical across environments
     lung[[c for c in keepcols if c in lung.columns]] \
+        .sort_values(["depmap_id", "name"], kind="stable") \
         .to_csv(os.path.join(a.out, "sprime_lung_pairs.csv"), index=False)
-    g.to_csv(os.path.join(a.out, "lung_genotypes.csv"), index=False)
+    g.sort_values("ModelID", kind="stable") \
+        .to_csv(os.path.join(a.out, "lung_genotypes.csv"), index=False)
     log(f"  wrote {a.out}/sprime_lung_pairs.csv and lung_genotypes.csv")
     sys.exit(0 if val_ok else 1)
 
