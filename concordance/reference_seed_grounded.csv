@@ -1,0 +1,8 @@
+genotype,target,compound,pmid,doi,source_db,search_terms,date_frozen,inclusion_rationale
+RB1,AURKB,barasertib,30373918.0,10.1158/2159-8290.CD-18-0389,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05,SCLC RB1-loss (Oser 2019) / selective-DepMap-Achilles
+RB1,AURKA,LY3295668,30373917.0,10.1158/2159-8290.CD-18-0469,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05,SCLC/TNBC RB1-loss (Gong 2019) / 
+RB1,PLK1,,,,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05, / common-essential
+RB1,CHEK1,,,,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05, / common-essential
+RB1,PARP1,olaparib,,,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05, / context-selective
+PTEN,AKT1,MK-2206,,,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05,PTEN-deficient PI3K/AKT dependence / 
+TP53,KIF11,ispinesib,,,"BioGRID ORCS / ChEMBL / PubMed (grounded 2026-07-05, independent of ΔpS′)",,2026-07-05, / common-essential

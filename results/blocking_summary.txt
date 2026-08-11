@@ -1,0 +1,18 @@
+S' matrix: 1405 compounds x 94 lung lines
+
+ANALYSIS 1 — candidate sizes + label-permutation null (2000 perms)
+gene     tested  candidates    rate  null_mean   emp_p  perm_FDR
+PTEN        883          97   11.0%       97.1   0.462      1.00
+CDKN2A     1402          48    3.4%       41.7   0.316      0.87
+RB1        1360          94    6.9%       63.6   0.096      0.68
+TP53       1402          16    1.1%       20.3   0.597      1.27
+  Only genotypes with perm_FDR well below ~0.5 carry signal beyond chance.
+
+ANALYSIS 2 — line-centred S' (general-sensitivity control)
+gene     off(MUT-WT)   raw  centred  survived  corr_dpS
+PTEN           -0.02    97        3         3     1.000
+CDKN2A         -0.06    48        6         6     0.999
+RB1            +0.07    94        5         5     0.999
+TP53           -0.13    16        3         3     0.996
+  Small offset + corr≈1 => no gross sensitivity confound; large raw→centred drop reflects the
+  absolute pS'>0 gate (1uM / percent-Emax anchoring), not differential sensitivity.

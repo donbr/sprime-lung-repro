@@ -1,0 +1,18 @@
+# Large public inputs — download via fetch_data.py / DOWNLOAD_CHECKLIST.md (DepMap terms; not redistributed)
+data_sources/
+*.csv.gz
+
+# Big derived table (regenerate with run_all.py); small summary CSVs ARE committed
+results/sprime_lung_pairs.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db

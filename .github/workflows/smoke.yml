@@ -1,0 +1,28 @@
+name: smoke
+
+# CI cannot run the real analysis (the ~400 MB DepMap/PRISM inputs are gated and not committed).
+# It runs a synthetic-data smoke test that checks the S′ math and window logic only.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install (numpy/pandas only; no network data)
+        run: pip install numpy pandas
+      - name: Syntax-check all scripts
+        run: python -m py_compile sprime_core.py sprime_pipeline.py blocking_analyses.py bootstrap_ci_gate.py demeter_validation.py fetch_data.py concordance/concordance_enrichment.py
+      - name: Synthetic smoke test
+        run: python tests/test_synthetic.py

@@ -1,0 +1,11 @@
+genotype,target,compound,pmid,doi,source_db,search_terms,date_frozen,inclusion_rationale
+# One row per literature-supported genotype-selective vulnerability. Fill BLIND to ΔpS' (see protocol).
+# genotype: PTEN | CDKN2A | RB1 | TP53
+# target: HGNC gene symbol of the SL target (expanded to all PRISM compounds annotated to it). Optional if 'compound' given.
+# compound: exact drug name (matched to PRISM 'name', case-insensitive). Optional if 'target' given.
+# pmid/doi: REQUIRED — the publication supporting this genotype-specific SL/dependency claim.
+# source_db: where you found it (PubMed, SynLethDB, BioGRID ORCS, ChEMBL, review ...).
+# search_terms: the query string used.
+# date_frozen: YYYY-MM-DD the reference list was frozen (before running the benchmark).
+# inclusion_rationale: one line — why this entry qualifies.
+RB1,AURKA,,30373917,10.1158/2159-8290.CD-18-0469,PubMed,"RB1 AND (synthetic lethal OR Aurora) AND (SCLC OR lung)",,"Gong 2019: RB1 loss -> AURKA SL"
