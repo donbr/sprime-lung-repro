@@ -70,8 +70,8 @@ a file that fails verification is quarantined rather than left where the pipelin
 PRISM methodology: Corsello et al. 2020, *Nat Cancer*, PMID 32613204.
 Code is released under the MIT License (`LICENSE`). Mint a Zenodo DOI on a tagged release for citation.
 
-CI runs a synthetic-data smoke test only (the real 400 MB inputs cannot live in CI); see
-`.github/workflows/smoke.yml`.
+CI runs a synthetic-data smoke test plus a check that every figure quoted in `docs/` still matches the
+committed results CSVs (the real 400 MB inputs cannot live in CI); see `.github/workflows/smoke.yml`.
 
 ## Documentation
 `docs/` explains the analysis for a reader arriving cold: [`docs/method.md`](docs/method.md) for the S′
