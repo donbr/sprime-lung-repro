@@ -20,6 +20,14 @@ python fetch_data.py          # download + md5-verify the public inputs into dat
 python run_all.py             # build S′ + genotypes, then all three statistical controls
 ```
 
+Or, with [uv](https://docs.astral.sh/uv/), using the hashed, pinned `uv.lock` directly:
+
+```bash
+uv sync --locked              # builds a .venv from uv.lock — the same pins requirements.txt is generated from
+uv run python fetch_data.py
+uv run python run_all.py
+```
+
 `run_all.py` executes: **(1)** `sprime_pipeline.py` (build + validate), **(2)** `blocking_analyses.py`
 (candidate sizes, permutation null, line-centring), **(3)** `bootstrap_ci_gate.py`. The optional
 literature-blind concordance benchmark and the DEMETER2 genetic-dependency validation are separate commands
@@ -58,7 +66,9 @@ sprime-lung-repro/
 ├── demeter_validation.py    # DEMETER2 RNAi genetic-dependency validation (needs the DEMETER2 file)
 ├── concordance/             # literature-blind concordance benchmark scaffold (protocol + engine)
 ├── CONNECTORS.md            # how the bio-research MCP connectors support the curation steps
-├── requirements.txt · run_all.py · tests/ · .github/workflows/
+├── pyproject.toml · uv.lock # uv dependency declaration + hashed lock (source of truth)
+├── requirements.txt         # generated from uv.lock (uv export) — for pip/conda workflows
+├── run_all.py · tests/ · .github/workflows/
 └── data_sources/            # (gitignored) the large public inputs go here
 ```
 
@@ -70,8 +80,11 @@ a file that fails verification is quarantined rather than left where the pipelin
 PRISM methodology: Corsello et al. 2020, *Nat Cancer*, PMID 32613204.
 Code is released under the MIT License (`LICENSE`). Mint a Zenodo DOI on a tagged release for citation.
 
-CI runs a synthetic-data smoke test plus a check that every figure quoted in `docs/` still matches the
-committed results CSVs (the real 400 MB inputs cannot live in CI); see `.github/workflows/smoke.yml`.
+CI runs a synthetic-data smoke test plus a check that every figure quoted in `docs/`, this README, and
+`concordance/README.md` still matches the committed results CSVs (the real 400 MB inputs cannot live in
+CI). A `locked` job proves the pinned `uv.lock` environment builds and passes; a `portability` job
+installs from the generated `requirements.txt` on Python 3.10 and 3.12. See
+`.github/workflows/smoke.yml`.
 
 ## Documentation
 `docs/` explains the analysis for a reader arriving cold: [`docs/method.md`](docs/method.md) for the S′

@@ -12,16 +12,16 @@ import numpy as np, pandas as pd
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import safe_stdout
+from sprime_core import DELTA_LE, MIN_LINES, passes_window
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
-MINN = 3
 
 def candidates(mat, wt_ids, mut_ids):
     wt = mat.reindex(columns=wt_ids); mut = mat.reindex(columns=mut_ids)
-    ok = (wt.notna().sum(1) >= MINN) & (mut.notna().sum(1) >= MINN)
+    ok = (wt.notna().sum(1) >= MIN_LINES) & (mut.notna().sum(1) >= MIN_LINES)
     pwt = wt.mean(1); pmut = mut.mean(1); d = pwt - pmut
-    return ok, ok & (pwt > 0) & (pmut > 0) & (d <= -2), d
+    return ok, ok & passes_window(pwt, pmut), d
 
 def main():
     ap = argparse.ArgumentParser()
@@ -55,13 +55,19 @@ def main():
             perm = rng.permutation(len(pool)); mi, wi = perm[:nmut], perm[nmut:]
             pm = np.nanmean(sub[:, mi], 1); pw = np.nanmean(sub[:, wi], 1)
             cm = np.sum(~np.isnan(sub[:, mi]), 1); cw = np.sum(~np.isnan(sub[:, wi]), 1)
-            null[i] = np.nansum((cw >= MINN) & (cm >= MINN) & (pw > 0) & (pm > 0) & ((pw - pm) <= -2))
+            null[i] = np.nansum((cw >= MIN_LINES) & (cm >= MIN_LINES) & (pw > 0) & (pm > 0) & ((pw - pm) <= DELTA_LE))
         emp_p = (np.sum(null >= nobs) + 1) / (a.perm + 1)
         fdr = null.mean() / nobs if nobs else float("nan")
-        rows.append(dict(gene=g, tested=ntest, candidates=nobs, rate=nobs / ntest,
+        rate = nobs / ntest if ntest else float("nan")
+        rows.append(dict(gene=g, tested=ntest, candidates=nobs, rate=rate,
                          null_mean=null.mean(), emp_p=emp_p, perm_fdr=fdr))
-        log(f"{g:7}{ntest:>8}{nobs:>12}{100*nobs/ntest:>7.1f}%{null.mean():>11.1f}{emp_p:>8.3f}{fdr:>10.2f}")
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False)
+        rate_str = f"{100*rate:.1f}%" if ntest else "n/a"
+        log(f"{g:7}{ntest:>8}{nobs:>12}{rate_str:>8}{null.mean():>11.1f}{emp_p:>8.3f}{fdr:>10.2f}")
+    # %.12g: reported floats are written at a fixed precision so the file does not vary with the
+    # BLAS build. np.corrcoef below differs in the last ULP between numpy builds, which is invisible
+    # at any precision we display but would otherwise make a cited CSV fail a byte-for-byte diff.
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False,
+                              float_format="%.12g")
     log("  Only genotypes with perm_FDR well below ~0.5 carry signal beyond chance.\n")
 
     # ---------- Analysis 2 ----------
@@ -79,7 +85,8 @@ def main():
         rows2.append(dict(gene=g, offset_mut_minus_wt=mum - wtm, raw=len(rs), centred=len(cs),
                           survived=len(rs & cs), corr_dps=corr))
         log(f"{g:7}{mum-wtm:>+13.2f}{len(rs):>6}{len(cs):>9}{len(rs&cs):>10}{corr:>10.3f}")
-    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False)
+    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False,
+                               float_format="%.12g")
     log("  Small offset + corr≈1 => no gross sensitivity confound; large raw→centred drop reflects the")
     log("  absolute pS'>0 gate (1uM / percent-Emax anchoring), not differential sensitivity.")
 

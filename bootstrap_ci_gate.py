@@ -18,10 +18,10 @@ import numpy as np, pandas as pd
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import safe_stdout
+from sprime_core import DELTA_LE, MIN_LINES, passes_window
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
-MINN = 3
 
 def main():
     here = os.path.dirname(os.path.abspath(__file__))
@@ -50,8 +50,8 @@ def main():
         MU = M.reindex(columns=mu).to_numpy()      # compounds x nMUT
         nwt = np.sum(~np.isnan(WT), 1); nmut = np.sum(~np.isnan(MU), 1)
         pwt = np.nanmean(WT, 1); pmut = np.nanmean(MU, 1); dps = pwt - pmut
-        ok = (nwt >= MINN) & (nmut >= MINN)
-        cand = ok & (pwt > 0) & (pmut > 0) & (dps <= -2)     # point-estimate candidates
+        ok = (nwt >= MIN_LINES) & (nmut >= MIN_LINES)
+        cand = ok & passes_window(pwt, pmut)     # point-estimate candidates
         idx = np.where(cand)[0]
         n_excl0 = n_ci2 = 0
         for i in idx:
@@ -62,7 +62,7 @@ def main():
             bd = bw - bm
             lo, hi = np.percentile(bd, [2.5, 97.5])
             passes_excl0 = hi < 0
-            passes_ci2 = hi <= -2
+            passes_ci2 = hi <= DELTA_LE
             n_excl0 += passes_excl0; n_ci2 += passes_ci2
             rows.append(dict(gene=g, compound=comps[i], dpS=round(float(dps[i]), 3),
                              ci_lo=round(float(lo), 3), ci_hi=round(float(hi), 3),
@@ -72,8 +72,10 @@ def main():
         print(f"{g:7}{npt:>12}{n_excl0:>10}{n_ci2:>10}")
         summary.append(dict(gene=g, point=npt, ci_excl0=n_excl0, ci_le_minus2=n_ci2))
 
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "bootstrap_ci_gate.csv"), index=False)
-    pd.DataFrame(summary).to_csv(os.path.join(a.out, "bootstrap_ci_summary.csv"), index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "bootstrap_ci_gate.csv"), index=False,
+                              float_format="%.12g")
+    pd.DataFrame(summary).to_csv(os.path.join(a.out, "bootstrap_ci_summary.csv"), index=False,
+                                 float_format="%.12g")
     print("\n  point   = current rule (ΔpS′ point estimate ≤ −2)")
     print("  + CI<0  = also require bootstrap 95% CI upper bound < 0  (selectivity distinguishable from zero)")
     print("  + CI≤-2 = also require the whole 95% CI at/below the −2 threshold")
