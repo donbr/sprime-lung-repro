@@ -104,6 +104,7 @@ def main():
         v = g[gene]; nWT = int((v == 0).sum()); nMUT = int((v == 2).sum())
         ew, em = EXPECTED_COHORTS[gene]
         near = abs(nWT - ew) <= 3 and abs(nMUT - em) <= 2
+        val_ok &= near
         log(f"    {gene:7} WT={nWT:3d} mut={nMUT:3d}  [Suppl9 {ew}/{em}]  {'ok' if near else 'CHECK'}")
 
     # ---- write derived tables ----
