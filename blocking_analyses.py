@@ -12,16 +12,16 @@ import numpy as np, pandas as pd
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import safe_stdout
+from sprime_core import DELTA_LE, MIN_LINES, passes_window
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
-MINN = 3
 
 def candidates(mat, wt_ids, mut_ids):
     wt = mat.reindex(columns=wt_ids); mut = mat.reindex(columns=mut_ids)
-    ok = (wt.notna().sum(1) >= MINN) & (mut.notna().sum(1) >= MINN)
+    ok = (wt.notna().sum(1) >= MIN_LINES) & (mut.notna().sum(1) >= MIN_LINES)
     pwt = wt.mean(1); pmut = mut.mean(1); d = pwt - pmut
-    return ok, ok & (pwt > 0) & (pmut > 0) & (d <= -2), d
+    return ok, ok & passes_window(pwt, pmut), d
 
 def main():
     ap = argparse.ArgumentParser()
@@ -55,7 +55,7 @@ def main():
             perm = rng.permutation(len(pool)); mi, wi = perm[:nmut], perm[nmut:]
             pm = np.nanmean(sub[:, mi], 1); pw = np.nanmean(sub[:, wi], 1)
             cm = np.sum(~np.isnan(sub[:, mi]), 1); cw = np.sum(~np.isnan(sub[:, wi]), 1)
-            null[i] = np.nansum((cw >= MINN) & (cm >= MINN) & (pw > 0) & (pm > 0) & ((pw - pm) <= -2))
+            null[i] = np.nansum((cw >= MIN_LINES) & (cm >= MIN_LINES) & (pw > 0) & (pm > 0) & ((pw - pm) <= DELTA_LE))
         emp_p = (np.sum(null >= nobs) + 1) / (a.perm + 1)
         fdr = null.mean() / nobs if nobs else float("nan")
         rows.append(dict(gene=g, tested=ntest, candidates=nobs, rate=nobs / ntest,

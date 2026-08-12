@@ -13,10 +13,10 @@ import numpy as np, pandas as pd
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from _common import safe_stdout
+from sprime_core import DELTA_LE, MIN_LINES, passes_window
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
-MINN = 3
 try:
     from scipy.stats import hypergeom
     def hyper_sf(k, N, K, n): return float(hypergeom.sf(k - 1, N, K, n))
@@ -33,9 +33,9 @@ except Exception:
 
 def candidates(mat, wt, mu):
     w = mat.reindex(columns=wt); m = mat.reindex(columns=mu)
-    ok = (w.notna().sum(1) >= MINN) & (m.notna().sum(1) >= MINN)
+    ok = (w.notna().sum(1) >= MIN_LINES) & (m.notna().sum(1) >= MIN_LINES)
     d = w.mean(1) - m.mean(1)
-    return set(ok[ok].index), set((ok & (w.mean(1) > 0) & (m.mean(1) > 0) & (d <= -2)).pipe(lambda s: s[s]).index)
+    return set(ok[ok].index), set((ok & passes_window(w.mean(1), m.mean(1))).pipe(lambda s: s[s]).index)
 
 def token_match(target, text):
     if not isinstance(text, str) or not target: return False
