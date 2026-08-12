@@ -98,7 +98,7 @@ raw and centred ΔpS′.
 ## Control 3 — the bootstrap CI gate
 
 This control layers three successively stricter gates on top of the raw candidate count: the point-estimate
-gate already in the SL window (ΔpS′ ≤ −2, the manuscript's rule), a gate requiring the bootstrap 95%
+gate already in the SL window (ΔpS′ ≤ −2, the rule set by the companion manuscript, in review), a gate requiring the bootstrap 95%
 confidence interval's upper bound to fall below 0 (selectivity distinguishable from zero, not merely a point
 estimate that happens to land past threshold), and the strictest gate, requiring the *entire* confidence
 interval to sit at or past −2 (the whole plausible range of the estimate clears the effect-size bar, not just
