@@ -25,8 +25,10 @@ GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
 DEFAULT_TARGETS = ["AURKB", "AURKA", "PLK1", "CHEK1", "PARP1", "KIF11", "AKT1", "SKP2", "CCNE2", "E2F4", "CDK4", "CDK6"]
 try:
     from scipy.stats import mannwhitneyu
-except Exception:
-    mannwhitneyu = None
+except ImportError:
+    print("ERROR: scipy is required (scipy.stats.mannwhitneyu) but is not installed.\n"
+          "  Install it with:  pip install scipy   (or: uv sync)")
+    sys.exit(4)
 
 def md5sum(path, chunk=1 << 20):
     h = hashlib.md5()
@@ -110,7 +112,7 @@ def main():
                 continue
             dpd = float(w.mean() - m.mean())      # ΔpD; <0 => mutant more dependent
             nan = float("nan")
-            if mannwhitneyu is not None and len(w) and len(m):
+            if len(w) and len(m):
                 p_mut = float(mannwhitneyu(m, w, alternative="greater").pvalue)  # mutant more dependent
                 p_wt = float(mannwhitneyu(w, m, alternative="greater").pvalue)   # WT more dependent
                 p_two = float(mannwhitneyu(w, m, alternative="two-sided").pvalue)
@@ -122,8 +124,7 @@ def main():
             # FDR within genotype, separately per hypothesis — a WT-selective target scores
             # p_mut -> 1, so q_mut alone reads as "nothing here" when the effect is real.
             for src, dst in (("p_mut", "q_mut"), ("p_wt", "q_wt"), ("p_two", "q_two")):
-                qs = (bh_fdr([r[src] for r in pset]) if mannwhitneyu is not None
-                      else [float("nan")] * len(pset))
+                qs = bh_fdr([r[src] for r in pset])
                 for r, qq in zip(pset, qs):
                     r[dst] = float(qq)
             for r in pset:
