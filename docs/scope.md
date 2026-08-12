@@ -16,7 +16,7 @@ companion manuscript (in review) asked for, and that this code does not carry ou
 | Line-centring / general-sensitivity control | yes |
 | Per-compound bootstrap CI gate | yes |
 | Literature-blind concordance engine | yes (engine only; reference set incomplete) |
-| DEMETER2 RNAi cross-check | yes (needs the optional input) |
+| DEMETER2 RNAi cross-check | yes (output committed; regenerating needs the optional input) |
 | Curve fit-quality / minimum-E_max gate | no |
 | EC₅₀ censoring at the tested dose range | no |
 | Copy-number (deep deletion) genotype calls | no |
@@ -104,6 +104,19 @@ interact across genes rather than acting as four independent single-gene effects
 and this repository does not test it. Every analysis here is a single-gene, two-cohort contrast: one gene,
 wild type versus mutant, repeated independently across PTEN, CDKN2A, RB1, and TP53. Nothing here fits a
 model in which two or more genotypes jointly predict response.
+
+## The DEMETER2 cross-check's real caveats
+
+`results/demeter_validation.csv` is committed, and its RB–E2F/CDK4-6 result is now a checkable, obtained
+finding rather than an unverifiable one (see [evidence.md](evidence.md) and [verifying.md](verifying.md)) —
+the missing artifact is no longer the honest caveat here. Two narrower ones remain. RB1's own RNAi result
+rests on a mutant cohort of only 6 cell lines, smaller than any of the four PRISM cohorts in `method.md`'s
+cohort table and the same kind of small-cohort fragility PTEN's 3-line mutant pool carries in the
+drug-response analysis — a result resting on 6 lines should be read as suggestive, not as backed by a broad,
+well-powered cohort. And PTEN itself is entirely absent from that CSV: its DEMETER2-covered mutant cohort
+falls below the `--min-lines` floor of 5 that `demeter_validation.py` applies uniformly to every target, so
+no PTEN target can be assessed by RNAi at all under this cross-check. That is a coverage gap in this
+analysis, not evidence that PTEN dependencies do not exist.
 
 ## The concordance reference set is incomplete
 
