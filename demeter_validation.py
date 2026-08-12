@@ -59,7 +59,9 @@ def main():
     if not os.path.exists(dfile):
         print(f"DEMETER2 file not found: {dfile}\n  Get it with:  python fetch_data.py --only demeter2_rnai")
         sys.exit(2)
-    if not a.skip_checksum and a.demeter == ap.get_default("demeter"):
+    if a.skip_checksum:
+        print("DEMETER2 checksum verification skipped (--skip-checksum). Input authenticity unverified.")
+    else:
         got = md5sum(dfile)
         if got != DEMETER_MD5:
             print(f"DEMETER2 md5 MISMATCH: got {got}, expected {DEMETER_MD5}\n"
@@ -68,7 +70,9 @@ def main():
             sys.exit(3)
 
     targets = a.genes or DEFAULT_TARGETS
-    if a.reference and os.path.exists(a.reference):
+    if a.reference:
+        if not os.path.exists(a.reference):
+            print(f"ERROR: --reference {a.reference} not found."); sys.exit(2)
         ref = pd.read_csv(a.reference, comment="#")
         targets = sorted(set(targets) | set(ref["target"].dropna().astype(str)))
     targets = [t for t in targets if t]
