@@ -78,9 +78,17 @@ extremely potent compound cannot single-handedly drag a cohort mean.
 
 Both anchoring choices in the formula are choices, not derivations, and both are load-bearing. E_max is on
 the percent (0–100) scale, not the fraction (0–1) scale, and the reference concentration is 1 µM, not the
-screen's actual top dose. Re-anchoring to the screen's 10 µM top dose would shift every S′ by +2.30 (ln 10),
-and because the synthetic-lethal window below is stated in absolute S′ units — not in ranks or percentiles
-— that shift would move compounds across the ΔpS′ ≤ −2 threshold. The anchoring is not cosmetic.
+screen's actual top dose. What re-anchoring would actually disturb, though, is not the obvious thing.
+Multiplying the reference concentration by 10 does not add one constant to every S′: asinh approaches a
+fixed ln 10 ≈ 2.30 offset only for arguments far from zero, that offset carries the sign of S′ — upward for
+inhibitory compounds, downward for the disinhibitory ones this document's opening section defends — and in asinh's
+near-linear region around zero the value is scaled by roughly 10 instead of offset at all. And a shift
+applied equally to both cohort means would cancel exactly in ΔpS′ = pS′_WT − pS′_mutant, so the ΔpS′ ≤ −2
+threshold is not what the anchoring holds up. What it holds up is the window's two *absolute* activity
+gates, pS′_WT > 0 and pS′_mutant > 0, which are stated in absolute S′ units rather than in ranks or
+percentiles. Control 2 in [evidence.md](evidence.md) demonstrates exactly that mechanism from the other
+direction: shifting pooled pS′ leaves ΔpS′ almost untouched, yet most candidates drop out because they stop
+clearing "active in both cohorts." The anchoring is not cosmetic.
 
 ```mermaid
 flowchart LR
@@ -115,8 +123,12 @@ paradoxically, which is not the phenomenon of interest. pS′_mutant > 0 require
 likewise be a real inhibition, not merely "less bad than wild type" — this makes the dependency
 pharmacologically accessible, not just nominally present in the arithmetic. ΔpS′ ≤ −2 imposes a minimum
 effect size: it is not enough for the mutant cohort to be somewhat more sensitive, the gap must clear a
-fixed threshold. The repository adds a fourth, non-statistical condition: `MIN_LINES = 3` cell lines
-required in each pool, below which a cohort mean is not trusted.
+fixed threshold. The repository adds a fourth, non-statistical condition: `MIN_LINES = 3`. What that
+condition counts is coverage, not pool size — for each compound separately, at least three *non-missing* S′
+measurements in the wild-type pool and at least three in the mutant pool (`blocking_analyses.py:22`), below
+which that compound's cohort mean is not trusted. The distinction shows up in the tested universe: PTEN's
+mutant pool holds exactly three lines, so a compound missing a measurement in any one of them drops out
+entirely, leaving 883 testable compounds for PTEN against 1,402 for CDKN2A and TP53.
 
 Because the first two conditions push qualifying candidates into a pS′ range of roughly 2 to 4, the
 ΔpS′ ≤ −2 threshold has a fold-change reading: in that range, it amounts in practice to requiring roughly a
@@ -127,7 +139,7 @@ region gives way to its logarithmic one.
 
 ```mermaid
 flowchart TD
-    C["One compound, one genotype"] --> G1{"at least 3 lines<br/>in each pool?"}
+    C["One compound, one genotype"] --> G1{"at least 3 non-missing<br/>S' values in each pool?"}
     G1 -->|no| X1["not tested"]
     G1 -->|yes| G2{"pS' WT &gt; 0?"}
     G2 -->|no| X2["rejected: inactive or<br/>disinhibitory in wild type"]
@@ -233,7 +245,9 @@ flowchart LR
 
 One compound–cell-line pair anchors the whole metric to a hand-checkable number: doxorubicin in A549, with
 a fitted upper limit of 1.000, lower limit of 0.00103, and EC₅₀ of 0.2449 µM, gives S′ = 6.704.
-`tests/test_synthetic.py::test_sprime_worked_example` asserts this value on every run. This number also
+`tests/test_synthetic.py::test_sprime_worked_example` recomputes S′ from those inputs on every run and
+asserts it lands within 0.05 of 6.70 — a tolerance, not an exact equality, so the check survives ordinary
+floating-point variation while still failing on any real change to the formula. This number also
 corrects an arithmetic error present in the companion manuscript's own worked example — so if that test
 ever starts failing on the arithmetic rather than on stale results, the more likely explanation is a
 regression in this code, not a return to the manuscript's original number.

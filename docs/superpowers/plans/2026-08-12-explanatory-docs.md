@@ -52,7 +52,7 @@ The CDKN2A and TP53 differences are real and must be documented. `sprime_pipelin
 
 **Interfaces:**
 - Consumes: nothing from earlier tasks.
-- Produces: `tests/test_docs_numbers.py` exposing module-level helpers `_read(rel_path) -> pandas.DataFrame`, `_doc(name) -> str`, and `_assert_in(text, needle, doc_name, source) -> None`. Task 2 adds test functions to this same file and reuses all three helpers with those exact names and signatures.
+- Produces: `tests/test_docs_numbers.py` exposing module-level helpers `_read(rel_path) -> pandas.DataFrame`, `_doc(name) -> str`, `_assert_in(text, needle, doc_name, source) -> None`, `_assert_one_row_per_gene(df, source) -> None`, and `_table_rows_after(text, heading, doc_name) -> list[str]`, plus the module-level `GENES` list. Task 2 adds test functions to this same file and reuses all of them with those exact names and signatures.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -73,6 +73,8 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 
+GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
+
 
 def _read(rel_path):
     """Read a committed results CSV by repo-relative path."""
@@ -91,6 +93,37 @@ def _assert_in(text, needle, doc_name, source):
         f"{source}. The committed results changed, or the prose drifted — "
         f"update the document to match."
     )
+
+
+def _assert_one_row_per_gene(df, source):
+    """Guard the converse direction: a shrunken CSV must not pass vacuously.
+
+    Every row-by-row check below iterates the CSV, so a CSV that lost rows (or
+    is empty) would assert nothing at all and leave a stale phantom row in the
+    prose forever. Pin the shape first.
+    """
+    assert list(df.gene) == GENES, (
+        f"{source} holds gene rows {list(df.gene)}, expected exactly {GENES}. "
+        f"The committed results changed shape, so the row-by-row checks below "
+        f"can no longer prove the document is current — regenerate or fix "
+        f"{source} before trusting the docs."
+    )
+
+
+def _table_rows_after(text, heading, doc_name):
+    """Data rows of the first markdown table following `heading`."""
+    assert heading in text, f"docs/{doc_name} has no {heading!r} section."
+    lines, started = [], False
+    for line in text.split(heading, 1)[1].splitlines():
+        if line.startswith("|"):
+            started = True
+            lines.append(line)
+        elif started:
+            break
+    assert len(lines) >= 2, (
+        f"docs/{doc_name} has no markdown table under {heading!r}."
+    )
+    return lines[2:]  # drop the header row and the |---|---| separator
 
 
 def test_method_states_computed_cohort_sizes():
@@ -142,7 +175,7 @@ Create the document with these sections in this order. Write real explanatory pr
 
 **§ A pharmacology primer.** For a reader who has never fitted a dose-response curve. Define the 4PL fit and its four parameters; E_max as the signed difference between the upper and lower asymptote; EC₅₀ as the concentration producing half the maximal effect, and how it differs from IC₅₀ (which requires the curve to cross 50% absolute viability and is therefore undefined for a curve that never gets there); and AUC as area under the response curve, with the note that it compresses toward 1 for inactive compounds.
 
-**§ S′ defined.** State `S′ = asinh((E_max / EC₅₀) × 1 µM)`, citing `sprime_core.py` as the single source of truth. Explain each piece: E_max is signed, so inhibition is positive and disinhibition negative; dividing by EC₅₀ makes the index reward both efficacy and potency; multiplying by a 1 µM reference makes the argument dimensionless. Explain why asinh rather than log — it accepts negative, zero, and positive arguments, behaves nearly linearly near zero and nearly logarithmically for large magnitudes, and preserves sign and rank order while compressing extremes so that one very potent compound cannot dominate a cohort mean. State both anchoring choices explicitly as choices: E_max is on the percent (0–100) scale, and 1 µM is the reference. Note that re-anchoring to the screen's 10 µM top dose would shift every S′ by +2.30 and that the window threshold is in absolute S′ units, so the anchoring is load-bearing. Follow with diagram D3.
+**§ S′ defined.** State `S′ = asinh((E_max / EC₅₀) × 1 µM)`, citing `sprime_core.py` as the single source of truth. Explain each piece: E_max is signed, so inhibition is positive and disinhibition negative; dividing by EC₅₀ makes the index reward both efficacy and potency; multiplying by a 1 µM reference makes the argument dimensionless. Explain why asinh rather than log — it accepts negative, zero, and positive arguments, behaves nearly linearly near zero and nearly logarithmically for large magnitudes, and preserves sign and rank order while compressing extremes so that one very potent compound cannot dominate a cohort mean. State both anchoring choices explicitly as choices: E_max is on the percent (0–100) scale, and 1 µM is the reference. Then explain, correctly, why they are load-bearing. Re-anchoring to the screen's 10 µM top dose is **not** a uniform +2.30 shift and must not be written as one: asinh approaches the ln 10 offset only asymptotically, that offset carries the sign of S′ (it is −2.30 for the disinhibitory values this document spends its opening section defending), and in asinh's near-linear region around zero the value is scaled by roughly 10 rather than offset. Do **not** claim the shift moves compounds across the ΔpS′ ≤ −2 threshold — a shift applied equally to pS′_WT and pS′_mutant cancels exactly in their difference. What re-anchoring moves is the window's **absolute activity gates**, pS′_WT > 0 and pS′_mutant > 0, which are stated in absolute S′ units rather than ranks or percentiles; cross-reference Control 2 in `evidence.md`, where centring removes the large majority of candidates by exactly that mechanism while leaving ΔpS′ nearly invariant. Follow with diagram D3.
 
 **§ pS′ and ΔpS′.** pS′ is the cohort mean of S′ across cell lines for one compound. ΔpS′ = pS′_WT − pS′_mutant. Negative means mutant-selective inhibition. Note the asymmetry that trips readers: a *more negative* ΔpS′ is a *stronger* candidate.
 
@@ -303,7 +336,7 @@ git commit -m "docs: explain the S-prime metric, with a test pinning its figures
 - Modify: `tests/test_docs_numbers.py` — append four test functions before the `if __name__ == "__main__":` block
 
 **Interfaces:**
-- Consumes: `_read`, `_doc`, `_assert_in` from Task 1, unchanged signatures.
+- Consumes: `GENES`, `_read`, `_doc`, `_assert_in`, `_assert_one_row_per_gene`, `_table_rows_after` from Task 1, unchanged signatures. Every one of these tests iterates a CSV, so each MUST open with the matching shape guard — without it a truncated or empty results table makes the loop body run zero times and the test print `ok` while the document keeps a stale row.
 - Produces: nothing consumed by later tasks.
 
 - [ ] **Step 1: Write the failing tests**
@@ -314,6 +347,7 @@ Append to `tests/test_docs_numbers.py`, immediately before the `if __name__ == "
 def test_evidence_permutation_null_table():
     """The permutation-null row for each genotype must match candidate_null.csv."""
     df = _read("results/candidate_null.csv")
+    _assert_one_row_per_gene(df, "results/candidate_null.csv")
     doc = _doc("evidence.md")
     for r in df.itertuples():
         row = (f"| {r.gene} | {int(r.candidates)} | {r.null_mean:.1f} | "
@@ -324,6 +358,7 @@ def test_evidence_permutation_null_table():
 def test_evidence_line_centring_table():
     """The line-centring row for each genotype must match line_centring.csv."""
     df = _read("results/line_centring.csv")
+    _assert_one_row_per_gene(df, "results/line_centring.csv")
     doc = _doc("evidence.md")
     for r in df.itertuples():
         row = (f"| {r.gene} | {r.offset_mut_minus_wt:+.2f} | {int(r.raw)} | "
@@ -334,6 +369,7 @@ def test_evidence_line_centring_table():
 def test_evidence_bootstrap_table():
     """The bootstrap survivor row for each genotype must match the summary CSV."""
     df = _read("results/bootstrap_ci_summary.csv")
+    _assert_one_row_per_gene(df, "results/bootstrap_ci_summary.csv")
     doc = _doc("evidence.md")
     for r in df.itertuples():
         row = (f"| {r.gene} | {int(r.point)} | {int(r.ci_excl0)} | "
@@ -344,7 +380,17 @@ def test_evidence_bootstrap_table():
 def test_evidence_concordance_table():
     """Concordance rows must match; genotypes with an empty reference are skipped."""
     df = _read("concordance/results/concordance_report.csv")
+    _assert_one_row_per_gene(df, "concordance/results/concordance_report.csv")
     doc = _doc("evidence.md")
+    n_benchmarkable = int((df.ref_in_universe > 0).sum())
+    n_in_doc = len(_table_rows_after(doc, "## Control 4", "evidence.md"))
+    assert n_in_doc == n_benchmarkable, (
+        f"the Control 4 table in docs/evidence.md has {n_in_doc} data rows but "
+        f"concordance/results/concordance_report.csv has {n_benchmarkable} "
+        f"genotypes with a non-empty reference set. A genotype was added or "
+        f"lost — the document is quoting a row the results no longer support, "
+        f"or omitting one they now do."
+    )
     for r in df.itertuples():
         if int(r.ref_in_universe) == 0:
             continue
@@ -400,7 +446,7 @@ Note in prose that the correlation column is between raw and line-centred ΔpS�
 | TP53 | 16 | 4 | 1 |
 ```
 
-In prose: PTEN's 26 survivors rest on three mutant lines, so their intervals are degenerate and the count should not be read as robustness. TP53 loses three quarters of its candidates at the weakest gate. Add the warning that this gate does *not* remove implausible hits driven by flat curves — a stable but artifactual S′ passes it — and point to `scope.md`.
+In prose: PTEN's 26 survivors rest on three mutant lines, so their intervals are degenerate and the count should not be read as robustness. TP53 loses three quarters of its candidates (16 → 4) at the weaker of the *two bootstrap* gates — name it correctly: the 16 is already the point-estimate gate's output, so the drop belongs to the CI < 0 requirement, not to the ΔpS′ ≤ −2 gate. Add the warning that this gate does *not* remove implausible hits driven by flat curves — a stable but artifactual S′ passes it — and point to `scope.md`.
 
 **§ Control 4 — the concordance benchmark.** Explain the circularity first: the manuscript's reference set was assembled from compounds that had already passed the window, so all 75 of 75 reference compounds passed and recovery was 100% by construction. Then the protocol this repo provides: assemble from literature alone with databases, search terms, and dates recorded; freeze with a timestamp; only then compute recovery, misses, and an enrichment p-value. Present the current result against the grounded starter set, and label it clearly as illustrative rather than a finished benchmark. Table, quoted verbatim:
 
@@ -414,7 +460,7 @@ In prose: PTEN's 26 survivors rest on three mutant lines, so their intervals are
 
 State that CDKN2A has no reference entries and cannot be benchmarked at all, which is why it is absent from the table. Draw the honest conclusion: RB1 and TP53 recover specific known biology beyond chance even though their overall candidate lists sit near the permutation null, so the window recovers real pharmacology without being a genome-wide selective classifier. Note the starter set's own provenance gap and point to `scope.md`. Follow with diagrams D8 and D9.
 
-**§ Cross-check — DEMETER2 RNAi.** An orthogonal modality: genetic dependency rather than drug response. Explain the mirrored construction, D = −DEMETER2 so positive means more dependent, and ΔpD = pD_WT − pD_mutant so negative again means mutant-selective. The RB1 result is the informative one — the RB–E2F axis comes out mutant-selective while CDK4/6 comes out wild-type-selective in the same contrast, which is the expected positive control since RB1-intact cells depend on CDK4/6 and RB1-null cells bypass them. Recovering both directions in one analysis is an internal control on contrast direction, not merely a hit list. Add the reading trap: the one-sided q tests only "mutant more dependent", so a genuine wild-type-selective effect scores q ≈ 1 — always read the `direction` column before any q, and prefer the two-sided `q_two`. Do not quote per-target numbers; `demeter_validation.py` requires the optional DEMETER2 input and its output is not committed.
+**§ Cross-check — DEMETER2 RNAi.** An orthogonal modality: genetic dependency rather than drug response. Explain the mirrored construction, D = −DEMETER2 so positive means more dependent, and ΔpD = pD_WT − pD_mutant so negative again means mutant-selective. RB1 is the informative case, but state it as what the analysis is *constructed to test*, never as an obtained result: the RB–E2F axis is expected to score mutant-selective while CDK4/6 is expected to score wild-type-selective in the same contrast, since RB1-intact cells depend on CDK4/6 and RB1-null cells bypass them. Attribute the CDK4/6 half to `demeter_validation.py`'s own output legend, which names it as the positive control. Do **not** write "comes out", "recovering both directions correctly", or any other phrasing that reports an outcome — no run of this script is committed, so an asserted direction is exactly as unverifiable as an asserted number, and the section's own stated standard forbids both. Add the reading trap: the one-sided q tests only "mutant more dependent", so a genuine wild-type-selective effect scores q ≈ 1 — always read the `direction` column before any q, and prefer the two-sided `q_two`. Do not quote per-target numbers; `demeter_validation.py` requires the optional DEMETER2 input and its output is not committed.
 
 **§ What this adds up to.** Close with the synthesis: the candidate lists as a whole are largely indistinguishable from random genotype labels; the general-sensitivity confound is genuinely absent; the lists depend on absolute-scale anchoring; and specific, well-established biology is recovered beyond chance for RB1 and TP53. That combination supports a narrow claim and not a broad one.
 

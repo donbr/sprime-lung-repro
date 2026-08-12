@@ -46,8 +46,13 @@ is what motivates a signed metric and the manuscript's own argument runs in that
 3. **S′ defined.** The signed ratio and the asinh transform; why asinh rather than log (it accepts
    negative, zero, and positive values, compresses extremes, and preserves sign and rank order). Both
    anchoring choices stated as choices: E_max on the percent (0–100) scale, and 1 µM as the reference
-   concentration. Note that re-anchoring to the 10 µM top dose would shift every S′ by +2.30 and that the
-   window threshold is in absolute S′ units. Diagram D3.
+   concentration. Re-anchoring to the 10 µM top dose is **not** a uniform +2.30 shift and must not be
+   described as one: asinh reaches the ln 10 offset only asymptotically, the offset carries the sign of S′
+   (so it is −2.30 for disinhibitory values), and near zero the value is scaled by roughly 10 instead. Nor
+   would a uniform shift move ΔpS′ at all — it cancels in a WT-minus-mutant difference. The anchoring is
+   load-bearing because the window's **absolute activity gates** pS′_WT > 0 and pS′_mutant > 0 are stated in
+   absolute S′ units; cross-reference Control 2 in `evidence.md`, which removes candidates by exactly that
+   mechanism. Diagram D3.
 4. **pS′ and ΔpS′.** Cohort means per compound, the WT-minus-mutant contrast, and the sign convention
    (negative ΔpS′ means mutant-selective inhibition).
 5. **The SL window.** The three conditions and why each exists: activity in WT makes the effect an
@@ -81,10 +86,14 @@ is what motivates a signed metric and the manuscript's own argument runs in that
    with survivor counts and the note that PTEN's survivors rest on n_mut = 3.
 5. **Control 4 — concordance.** Why the original benchmark was circular, what blind assembly requires,
    and the current starter-set result. Diagrams D8 and D9.
-6. **Cross-check — DEMETER2 RNAi.** The RB–E2F axis coming out mutant-selective while CDK4/6 comes out
-   wild-type-selective in the same contrast, which is an internal positive control on contrast direction
-   rather than merely a hit list. Note that the one-sided q tests only "mutant more dependent", so a real
-   WT-selective effect scores q ≈ 1 — read `direction` before any q.
+6. **Cross-check — DEMETER2 RNAi.** State what the analysis is **constructed to test**, not what it found:
+   the RB–E2F axis is expected to score mutant-selective while CDK4/6 is expected to score
+   wild-type-selective in the same contrast — a two-directional check on contrast direction rather than
+   merely a hit list. Attribute the CDK4/6 expectation to `demeter_validation.py`'s own output legend
+   ("a positive control"). No run of that script is committed, so the section must assert no outcome, in
+   either direction — the same standard that already bars quoting its numbers. Note that the one-sided q
+   tests only "mutant more dependent", so a real WT-selective effect scores q ≈ 1 — read `direction`
+   before any q, and prefer two-sided `q_two`.
 7. **What the totality supports.** The window recovers specific known biology (Aurora/PLK under RB1 loss,
    KIF11 under TP53 mutation) without being a genome-wide selective classifier.
 
