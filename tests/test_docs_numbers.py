@@ -140,6 +140,46 @@ def test_evidence_concordance_table():
                    "concordance/results/concordance_report.csv")
 
 
+def test_evidence_demeter_validation_table():
+    """The DEMETER2 RNAi cross-check figures quoted in evidence.md must match demeter_validation.csv."""
+    df = _read("results/demeter_validation.csv")
+    demeter_genotypes = sorted(df.genotype.unique())
+    assert demeter_genotypes == ["CDKN2A", "RB1", "TP53"], (
+        f"results/demeter_validation.csv holds genotypes {demeter_genotypes}, expected exactly "
+        f"['CDKN2A', 'RB1', 'TP53']. The committed CSV changed shape, so the checks below can no "
+        f"longer prove the document is current — regenerate or fix the CSV before trusting the docs."
+    )
+    assert len(df) == 36, (
+        f"results/demeter_validation.csv has {len(df)} rows, expected 36. The committed CSV changed "
+        f"shape, so the checks below can no longer prove the document is current — regenerate or fix "
+        f"the CSV before trusting the docs."
+    )
+    doc = _doc("evidence.md")
+
+    def _fmt_q(q):
+        return "<0.0001" if q == 0 else f"{q:.4f}"
+
+    rb1 = df[df.genotype == "RB1"].set_index("target")
+    for target in ("SKP2", "CCNE2", "E2F4", "AKT1", "CDK4", "CDK6", "AURKB", "AURKA"):
+        r = rb1.loc[target]
+        needle = f"{target} (ΔpD {r.delta_pD:+.3f}, q_two {_fmt_q(r.q_two)})"
+        _assert_in(doc, needle, "evidence.md", "results/demeter_validation.csv")
+
+    rb1_cohort = rb1.iloc[0]
+    cohort_needle = f"{int(rb1_cohort.n_mut)} mutant / {int(rb1_cohort.n_wt)} WT"
+    _assert_in(doc, cohort_needle, "evidence.md", "results/demeter_validation.csv")
+
+    tp53_kif11 = df[(df.genotype == "TP53") & (df.target == "KIF11")].iloc[0]
+    needle = f"KIF11 (ΔpD {tp53_kif11.delta_pD:+.3f}, q_two {_fmt_q(tp53_kif11.q_two)})"
+    _assert_in(doc, needle, "evidence.md", "results/demeter_validation.csv")
+
+    assert "PTEN" not in demeter_genotypes, (
+        "results/demeter_validation.csv now has PTEN rows, but evidence.md's Cross-check section "
+        "states PTEN is entirely absent below the --min-lines floor — update the prose if PTEN "
+        "coverage has changed."
+    )
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):
