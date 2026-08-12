@@ -4,8 +4,8 @@ The controls documented in [evidence.md](evidence.md) are specific: each one tes
 against a particular candidate list, and each states plainly what it found. None of them, individually or
 together, adds up to a general guarantee that every remaining candidate is real. A reader should not infer
 that a control not listed there was quietly passed elsewhere in the code. This document names, plainly, the
-analyses this repository does not perform — every gap below is a real check the companion manuscript (in
-review)'s referee review asked for, and that this code does not carry out.
+analyses this repository does not perform — every gap below is a real analysis a peer reviewer of the
+companion manuscript (in review) asked for, and that this code does not carry out.
 
 ## Coverage at a glance
 
@@ -83,9 +83,19 @@ The companion manuscript's mixture-model embedding of compound response profiles
 clustering over curve shape, rather than a direct threshold on pS′ and ΔpS′ — is not implemented here.
 
 Benjamini–Hochberg multiple-testing correction is implemented in this repository, but only inside
-`demeter_validation.py`, for the DEMETER2 RNAi cross-check. The primary significance analysis — the SL
-window and the label-permutation null in `evidence.md` — uses a family-wise threshold (ΔpS′ ≤ −2, and an
-empirical p-value against the null) instead of an FDR-controlled procedure.
+`demeter_validation.py`, for the DEMETER2 RNAi cross-check. What is missing from the primary significance
+analysis — the SL window and the label-permutation null in `evidence.md` — is specifically the
+Benjamini–Hochberg procedure, not FDR control as such: `blocking_analyses.py` already computes an empirical
+permutation FDR for every gene (`perm_fdr = null.mean() / nobs`, logged with the guidance that only
+genotypes with perm_FDR well below roughly 0.5 carry signal beyond chance), and `evidence.md` reports that
+quantity as its own column for all four genes. So it would be wrong to say this repository's primary
+analysis lacks FDR control; it estimates FDR by permutation rather than by the Benjamini–Hochberg procedure.
+That is a separate question from what the companion manuscript's own primary significance rule does: the
+manuscript's ΔpS′ ≤ −2 cutoff is a family-wise threshold, a single fixed effect-size bar applied without any
+FDR estimate attached to it — a distinct statistical concept from FDR control, whether permutation-estimated
+or BH-derived, and the two are easy to conflate on a skim. This repository's own primary analysis is not
+that: it carries a permutation-estimated FDR alongside the same effect-size cutoff, and the gap named in the
+table above is only that it never routes that estimate through Benjamini–Hochberg specifically.
 
 No multi-gene interaction term is fitted anywhere in this repository. This is the gap that matters most,
 because it is precisely where the companion manuscript's network-level thesis — that these vulnerabilities
