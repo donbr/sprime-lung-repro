@@ -19,7 +19,9 @@ protocol.
 ```bash
 python concordance_enrichment.py --reference reference_seed_grounded.csv    # or your frozen reference_set.csv
 ```
-(Requires `../results/` from `run_all.py`. Uses scipy if present, else an exact hypergeometric fallback.)
+(Requires `../results/` from `run_all.py`. Requires scipy — `scipy.stats.hypergeom` computes the
+hypergeometric enrichment; there is no fallback, and the script exits 4 with an install message if
+scipy is missing.)
 
 ## Demonstration on the grounded starter set (illustrative — NOT the final benchmark)
 

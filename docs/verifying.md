@@ -15,13 +15,13 @@ documents at all.
 
 ## Tier 0 — no download, no network, seconds
 
-This is exactly what `.github/workflows/smoke.yml` runs on every push and pull request, on
-Python 3.10 and 3.12. You can run the same steps locally:
+This is exactly what `.github/workflows/smoke.yml` runs on every push and pull request: its `locked`
+job (`uv sync --locked` against the committed `uv.lock`) and its `portability` job (`pip install -r
+requirements.txt` on Python 3.10 and 3.12) both run these same three steps. You can run the same steps
+locally:
 
 ```bash
-python3 -m py_compile _common.py sprime_core.py sprime_pipeline.py blocking_analyses.py \
-    bootstrap_ci_gate.py demeter_validation.py fetch_data.py run_all.py \
-    concordance/concordance_enrichment.py
+python3 -m py_compile $(git ls-files '*.py')
 python3 tests/test_synthetic.py
 python3 tests/test_docs_numbers.py
 ```
@@ -74,11 +74,10 @@ than by eye.
 
 This tier has been run start to finish at least once: all three inputs fetched and md5-verified against
 the pins, `run_all.py` completed, and `concordance_enrichment.py` and `demeter_validation.py` run
-separately afterward. Six of the seven artifacts committed at that time reproduced byte-identical —
-every candidate count, every permutation p-value, every FDR, and every bootstrap survivor count,
-including `concordance/results/concordance_report.csv`'s permutation p-values. The one exception, and
-exactly what it does and does not mean for the guarantee below, is described under "Determinism by
-construction."
+separately afterward. All seven committed artifacts reproduced byte-identical — every candidate count,
+every permutation p-value, every FDR, every bootstrap survivor count, and `results/line_centring.csv`'s
+`corr_dps` column, including `concordance/results/concordance_report.csv`'s permutation p-values. What
+makes that last one no longer a caveat is described under "Determinism by construction."
 
 ```bash
 pip install -r requirements.txt
@@ -119,24 +118,32 @@ named or differently sourced file.
 to `20260811`. Every sort in `sprime_pipeline.py` that determines row order or duplicate resolution uses
 `kind="stable"` explicitly, and derived tables are written in a canonical sort order before every write.
 Under `requirements.txt`'s pinned numpy 2.1.3 / pandas 2.2.3 / scipy 1.14.1, this is what makes every
-committed artifact byte-identical, not merely "the same numbers in some order."
+committed artifact byte-identical, not merely "the same numbers in some order." The `locked` job in
+`.github/workflows/smoke.yml` runs `uv sync --locked` against the committed `uv.lock` on every push, so a
+rerun in CI is always against exactly this pin, not merely "some recent enough version" — and `uv.lock`
+drifting from `pyproject.toml` fails that job outright.
 
 Under a *newer*, unpinned numpy the guarantee has actually been put to the test, not merely asserted: a
-full Tier 1 run against numpy 2.2.6 / pandas 2.3.3 / scipy 1.15.3 reproduced six of the seven
-then-committed artifacts byte-identical — every candidate count, every permutation p-value, every FDR,
-and every bootstrap survivor count, including `concordance/results/concordance_report.csv`'s permutation
-p-values, which exercise the `sorted(universe)` fix for Python's per-process string-hash randomisation.
-The one exception is `results/line_centring.csv`'s `corr_dps` column, which differed in the last one or
-two digits (CDKN2A `...39013` vs `...39008`; RB1 `...15146` vs `...15147`). That difference was
-diagnosed, not assumed: it reproduced identically across three separate runs on one machine, was
-unaffected by forcing `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1` and `MKL_NUM_THREADS=1`, and traces
-to `np.corrcoef` (`blocking_analyses.py:78`) computing through BLAS, whose summation order varies between
-library builds — not to any non-determinism in this repository's own code.
-`results/blocking_summary.txt`, which prints that column to three decimals, was byte-identical even
-under the newer numpy: the difference sits far below any displayed precision. A reviewer who reruns
-Tier 1 under the pinned versions and gets different numbers, or who reruns it under any numpy and finds
-a difference beyond the last couple of digits of `corr_dps`, has found a real discrepancy worth
-reporting, not sampling noise or an artifact of this note.
+full Tier 1 run against numpy 2.2.6 / pandas 2.3.3 / scipy 1.15.3 reproduced all seven then-committed
+artifacts byte-identical — every candidate count, every permutation p-value, every FDR, every bootstrap
+survivor count, and `results/line_centring.csv`'s `corr_dps` column, including
+`concordance/results/concordance_report.csv`'s permutation p-values, which exercise the
+`sorted(universe)` fix for Python's per-process string-hash randomisation.
+
+That last one used to be the one exception, and the underlying cause is still there: `np.corrcoef`
+(`blocking_analyses.py:78`) computes through BLAS, whose summation order varies between library builds,
+so the raw float64 `corr_dps` value can still differ from a different build in its last ULP or two (e.g.
+CDKN2A `...39013` vs `...39008`; RB1 `...15146` vs `...15147` were observed pre-fix). What changed is that
+every reported writer — including `line_centring.csv`'s — now formats with `float_format="%.12g"`
+(the six writers listed in `blocking_analyses.py`, `bootstrap_ci_gate.py`,
+`concordance/concordance_enrichment.py`, and `demeter_validation.py`), which rounds to 12 significant
+digits before the value ever reaches disk. That is comfortably coarser than the last-ULP BLAS divergence,
+so the *committed* CSV is now stable across BLAS builds, not merely stable in its first three displayed
+decimals. `results/sprime_lung_pairs.csv` is the one file this does not apply to — it is an intermediate
+re-read at full, unrounded precision by four downstream scripts, so rounding it would shift every
+downstream number rather than merely how it is displayed; it stays gitignored and is not asserted on here
+for exactly that reason. A reviewer who reruns Tier 1 under the pinned versions and gets different
+numbers in any *committed* CSV, under any numpy, has found a real discrepancy worth reporting.
 
 **Loud, not silent, failure.** `run_all.py` propagates `sprime_pipeline.py`'s exit code and
 stops before running the downstream controls on a bad build; a step-2 or step-3 failure is
@@ -152,8 +159,9 @@ Checkpoints to watch for while Tier 1 runs:
 - The regenerated `results/*.csv` files should be byte-identical to the committed copies under the
   pinned dependency versions (where a committed copy exists — `results/sprime_lung_pairs.csv` itself
   is gitignored as too large to commit, per `.gitignore`). `diff` or `git diff --stat` against the
-  committed CSVs is the direct check; expect it to come back empty except possibly the last one or two
-  digits of `line_centring.csv`'s `corr_dps` column, if your environment's numpy differs from the pin.
+  committed CSVs is the direct check; expect it to come back empty, including `line_centring.csv`'s
+  `corr_dps` column, even under a different environment's numpy — the fixed `%.12g` write precision is
+  what makes that true (see "Determinism by construction" above).
 
 ## What each command substantiates
 

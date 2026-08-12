@@ -6,6 +6,9 @@ gitignored; if you already keep the inputs in a `data_sources/` directory *besid
 layout is still detected, or pass `--data DIR` explicitly.) The pipeline **verifies every file by md5
 before doing anything**, so the wrong release cannot slip in.
 
+Either `pip install -r requirements.txt` or, with [uv](https://docs.astral.sh/uv/), `uv sync --locked`
+(then prefix commands below with `uv run`) gets the pinned dependencies in place first.
+
 ## What to download (DepMap portal → Downloads → "All Downloads")
 
 <https://depmap.org/portal/download/all/>

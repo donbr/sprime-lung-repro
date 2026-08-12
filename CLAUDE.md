@@ -59,7 +59,8 @@ Commands below use `python` as the docs do; on this machine only `python3` is on
 already importable there). `run_all.py` shells out to `sys.executable`, so the stages stay consistent.
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt       # requirements.txt is generated (uv export); see below
+# or: uv sync --locked                # builds a .venv from the hashed uv.lock — same pins, then `uv run ...`
 
 python fetch_data.py                  # download + md5-verify ~560 MB of inputs into data_sources/
 python fetch_data.py --only demeter2_rnai        # just the optional DEMETER2 matrix
@@ -77,12 +78,19 @@ python tests/test_synthetic.py                        # what CI runs; prints "AL
 python -m pytest tests/test_synthetic.py::test_sprime_sign     # single test, if pytest is installed
 
 # what CI also does — keep this passing, it is the only check that runs on every push
-python -m py_compile _common.py sprime_core.py sprime_pipeline.py blocking_analyses.py \
-  bootstrap_ci_gate.py demeter_validation.py fetch_data.py run_all.py concordance/concordance_enrichment.py
+python -m py_compile $(git ls-files '*.py')            # discovered, not a hardcoded file list
 ```
 
-CI (`.github/workflows/smoke.yml`, Python 3.10 + 3.12) can only run the synthetic smoke test — the real
-inputs are ~400 MB and gated. Real-data reproduction is a local step, always.
+`pyproject.toml` declares `numpy`, `pandas`, `scipy`, and `requests`; `uv.lock` is the hashed, pinned
+resolution (`uv lock`); `requirements.txt` is generated from it (`uv export --no-hashes --no-annotate`)
+for reviewers on plain pip or conda — regenerate it from `uv.lock`, don't hand-edit it.
+
+CI (`.github/workflows/smoke.yml`) runs two jobs, both on the synthetic smoke test (never on the ~400 MB
+gated real inputs — real-data reproduction is a local step, always): `locked` runs `uv sync --locked`
+against the committed `uv.lock` (so a stale lock fails CI, not just a local `uv lock --check`); `portability`
+installs from the generated `requirements.txt` on Python 3.10 and 3.12 plain pip, so scipy's real code paths
+actually execute there too. Both run the compile check, `tests/test_synthetic.py`, and
+`tests/test_docs_numbers.py`.
 
 ## Data flow
 
@@ -104,17 +112,23 @@ committed summary is a real risk — regenerate the whole chain with `run_all.py
 
 ## Things that will bite you
 
-**The SL window is duplicated.** `sprime_core.py` documents itself as the single source of truth
-(`DELTA_LE = -2.0`, `MIN_LINES = 3`, `passes_window`), but `blocking_analyses.py`, `bootstrap_ci_gate.py`,
-and `concordance/concordance_enrichment.py` each re-implement the window inline with a hardcoded `-2` and
-their own module-level `MINN = 3`. Changing `sprime_core` alone silently does nothing to the real analysis.
-Prefer routing the duplicates through `sprime_core` over editing constants in four places.
+**The SL window is genuinely single-sourced.** `sprime_core.py` is imported for `DELTA_LE = -2.0`,
+`MIN_LINES = 3`, and `passes_window` by all three consumers — `blocking_analyses.py`,
+`bootstrap_ci_gate.py`, and `concordance/concordance_enrichment.py` — with no local duplicate literals
+left behind. Changing `sprime_core` now actually changes the real analysis in all three places at once;
+do not reintroduce a local `-2` or a module-level `MINN = 3` in any consumer.
 
 **Byte-reproducibility is a maintained invariant, not an accident.** Derived tables must be identical
 across environments: `sort_values(..., kind="stable")` (the default quicksort leaves tie order
 unspecified, which would change which replicate `drop_duplicates(keep="last")` retains), a canonical row
 order before every `to_csv`, and the fixed seed `20260811` in all three RNG-using scripts. Don't drop a
-`kind="stable"` or reorder a write.
+`kind="stable"` or reorder a write. The six **reported** CSV writers (in `blocking_analyses.py`,
+`bootstrap_ci_gate.py`, `concordance/concordance_enrichment.py`, `demeter_validation.py`) additionally use
+`float_format="%.12g"`, so those committed CSVs no longer vary in their last digit across BLAS builds
+(see `docs/verifying.md`). `sprime_pipeline.py`'s writers are deliberately **not** formatted:
+`results/sprime_lung_pairs.csv` is an intermediate re-read at full precision by four downstream scripts,
+so rounding it would shift every downstream number; `results/lung_genotypes.csv` is already byte-stable
+0/1/2 values with nothing to round.
 
 **Checksums are pinned in three places** and must move together when a release is repinned:
 `fetch_data.SOURCES` (article_id + version + md5 + size), `sprime_pipeline.MD5` (PRISM, and both the 24Q2
@@ -133,15 +147,19 @@ console would otherwise raise `UnicodeEncodeError` *after* the CSVs are written.
 prints S′ notation needs the same call, and any file written with those characters needs an explicit
 `encoding="utf-8"`.
 
-**Exit codes carry meaning.** `sprime_pipeline.py`: 0 = ok, 1 = a validation anchor mismatched (continue
-but review), 2 = missing input, 3 = checksum/wrong release. `run_all.py` aborts on ≥ 2 and only warns on 1.
+**Exit codes carry meaning.** `sprime_pipeline.py`: 0 = ok, 1 = a validation anchor mismatched **or** the
+cohort-size check failed (continue but review), 2 = missing input, 3 = checksum/wrong release.
+`run_all.py` aborts on ≥ 2 and only warns on 1. `demeter_validation.py` and
+`concordance/concordance_enrichment.py` both exit 4 with an install message if scipy is missing —
+scipy is a required dependency (`pyproject.toml`), not an optional one, so this should only fire on a
+broken environment.
 
-**The docs quote committed results.** `docs/evidence.md` and `docs/method.md` reproduce figures from
-`results/*.csv` and `concordance/results/concordance_report.csv` in markdown tables, and
-`tests/test_docs_numbers.py` asserts they match — it runs in CI. Regenerating the results baseline
-therefore requires updating those tables in the same commit, or the build fails. Numbers the repo does not
-compute (the 4PL pathology percentages, the PRISM dilution scheme) are attributed inline and are not
-covered by the test.
+**The docs quote committed results.** `docs/evidence.md`, `docs/method.md`, `README.md`, and
+`concordance/README.md` all reproduce figures from `results/*.csv` and
+`concordance/results/concordance_report.csv` in markdown tables, and `tests/test_docs_numbers.py`
+asserts every one of them matches — it runs in CI. Regenerating the results baseline therefore requires
+updating those tables in the same commit, or the build fails. Numbers the repo does not compute (the 4PL
+pathology percentages, the PRISM dilution scheme) are attributed inline and are not covered by the test.
 
 ## Validation anchors
 
