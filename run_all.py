@@ -43,7 +43,8 @@ def main():
             print(f"\nrun_all: {name} FAILED (exit {rc}) — its outputs in {a.out} are missing or stale.")
 
     print("\n(Optional) literature-blind concordance:  "
-          "python concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv")
+          f"python concordance/concordance_enrichment.py --derived {a.out} "
+          "--reference concordance/reference_seed_grounded.csv")
     sys.exit(max(r2.returncode, r3.returncode))
 
 if __name__ == "__main__":
