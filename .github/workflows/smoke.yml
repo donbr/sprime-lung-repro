@@ -2,6 +2,12 @@ name: smoke
 
 # CI cannot run the real analysis (the ~400 MB DepMap/PRISM inputs are gated and not committed).
 # It runs a synthetic-data smoke test that checks the S′ math and window logic only.
+#
+# Two jobs prove two different things:
+#   locked       - `uv sync --locked` against the committed uv.lock, proving a reproducer's
+#                   environment actually builds (and failing if uv.lock drifts from pyproject.toml).
+#   portability  - installs from the generated requirements.txt on the 3.10/3.12 matrix, proving
+#                   the repo also works for reviewers on a plain pip workflow, scipy included.
 
 on:
   push:
@@ -10,7 +16,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  smoke:
+  locked:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.11.7"
+      - name: Sync locked environment (fails if uv.lock is stale vs pyproject.toml)
+        run: uv sync --locked
+      - name: Syntax-check all tracked Python files
+        run: uv run python -m py_compile $(git ls-files '*.py')
+      - name: Synthetic smoke test
+        run: uv run python tests/test_synthetic.py
+      - name: Documentation figures match committed results
+        run: uv run python tests/test_docs_numbers.py
+
+  portability:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -20,10 +43,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (numpy/pandas only; no network data)
-        run: pip install numpy pandas
-      - name: Syntax-check all scripts
-        run: python -m py_compile _common.py sprime_core.py sprime_pipeline.py blocking_analyses.py bootstrap_ci_gate.py demeter_validation.py fetch_data.py run_all.py concordance/concordance_enrichment.py
+      - name: Install from generated requirements.txt (numpy/pandas/scipy/requests; no network data)
+        run: pip install -r requirements.txt
+      - name: Syntax-check all tracked Python files
+        run: python -m py_compile $(git ls-files '*.py')
       - name: Synthetic smoke test
         run: python tests/test_synthetic.py
       - name: Documentation figures match committed results
