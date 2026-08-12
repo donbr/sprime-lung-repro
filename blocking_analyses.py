@@ -63,7 +63,11 @@ def main():
                          null_mean=null.mean(), emp_p=emp_p, perm_fdr=fdr))
         rate_str = f"{100*rate:.1f}%" if ntest else "n/a"
         log(f"{g:7}{ntest:>8}{nobs:>12}{rate_str:>8}{null.mean():>11.1f}{emp_p:>8.3f}{fdr:>10.2f}")
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False)
+    # %.12g: reported floats are written at a fixed precision so the file does not vary with the
+    # BLAS build. np.corrcoef below differs in the last ULP between numpy builds, which is invisible
+    # at any precision we display but would otherwise make a cited CSV fail a byte-for-byte diff.
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False,
+                              float_format="%.12g")
     log("  Only genotypes with perm_FDR well below ~0.5 carry signal beyond chance.\n")
 
     # ---------- Analysis 2 ----------
@@ -81,7 +85,8 @@ def main():
         rows2.append(dict(gene=g, offset_mut_minus_wt=mum - wtm, raw=len(rs), centred=len(cs),
                           survived=len(rs & cs), corr_dps=corr))
         log(f"{g:7}{mum-wtm:>+13.2f}{len(rs):>6}{len(cs):>9}{len(rs&cs):>10}{corr:>10.3f}")
-    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False)
+    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False,
+                               float_format="%.12g")
     log("  Small offset + corr≈1 => no gross sensitivity confound; large raw→centred drop reflects the")
     log("  absolute pS'>0 gate (1uM / percent-Emax anchoring), not differential sensitivity.")
 

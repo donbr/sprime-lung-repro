@@ -72,8 +72,10 @@ def main():
         print(f"{g:7}{npt:>12}{n_excl0:>10}{n_ci2:>10}")
         summary.append(dict(gene=g, point=npt, ci_excl0=n_excl0, ci_le_minus2=n_ci2))
 
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "bootstrap_ci_gate.csv"), index=False)
-    pd.DataFrame(summary).to_csv(os.path.join(a.out, "bootstrap_ci_summary.csv"), index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "bootstrap_ci_gate.csv"), index=False,
+                              float_format="%.12g")
+    pd.DataFrame(summary).to_csv(os.path.join(a.out, "bootstrap_ci_summary.csv"), index=False,
+                                 float_format="%.12g")
     print("\n  point   = current rule (ΔpS′ point estimate ≤ −2)")
     print("  + CI<0  = also require bootstrap 95% CI upper bound < 0  (selectivity distinguishable from zero)")
     print("  + CI≤-2 = also require the whole 95% CI at/below the −2 threshold")

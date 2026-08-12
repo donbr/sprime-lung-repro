@@ -142,7 +142,7 @@ def main():
     if len(res):
         res = res.sort_values(["genotype", "delta_pD"])
         print(res.to_string(index=False))
-        res.to_csv(os.path.join(a.out, "demeter_validation.csv"), index=False)
+        res.to_csv(os.path.join(a.out, "demeter_validation.csv"), index=False, float_format="%.12g")
         print(f"\nwrote {a.out}/demeter_validation.csv")
         print("ΔpD < 0 with q_mut < 0.10 => mutant-selective RNAi dependency (validates the genotype axis, not the target).")
         print("ΔpD > 0 with q_wt  < 0.10 => WT-selective (e.g. CDK4/6 under RB1 loss — a positive control).")

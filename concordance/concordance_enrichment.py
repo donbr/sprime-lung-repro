@@ -89,7 +89,8 @@ def main():
         rp = f"{rec:.0%}" if nR else "n/a"
         print(f"{g:7}{nR:>10}{K:>12}{N:>10}{k:>11}{rp:>10}{hp:>11.3g}{pp:>9.3g}")
 
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "concordance_report.csv"), index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "concordance_report.csv"), index=False,
+                              float_format="%.12g")
     print("\nMISSES (reference compounds tested but NOT recovered — the informative rows):")
     for g in GENES:
         print(f"  {g:7}: {', '.join(misses_all[g]) if misses_all[g] else '(none)'}")
