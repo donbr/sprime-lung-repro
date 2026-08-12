@@ -58,9 +58,11 @@ def main():
             null[i] = np.nansum((cw >= MIN_LINES) & (cm >= MIN_LINES) & (pw > 0) & (pm > 0) & ((pw - pm) <= DELTA_LE))
         emp_p = (np.sum(null >= nobs) + 1) / (a.perm + 1)
         fdr = null.mean() / nobs if nobs else float("nan")
-        rows.append(dict(gene=g, tested=ntest, candidates=nobs, rate=nobs / ntest,
+        rate = nobs / ntest if ntest else float("nan")
+        rows.append(dict(gene=g, tested=ntest, candidates=nobs, rate=rate,
                          null_mean=null.mean(), emp_p=emp_p, perm_fdr=fdr))
-        log(f"{g:7}{ntest:>8}{nobs:>12}{100*nobs/ntest:>7.1f}%{null.mean():>11.1f}{emp_p:>8.3f}{fdr:>10.2f}")
+        rate_str = f"{100*rate:.1f}%" if ntest else "n/a"
+        log(f"{g:7}{ntest:>8}{nobs:>12}{rate_str:>8}{null.mean():>11.1f}{emp_p:>8.3f}{fdr:>10.2f}")
     pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False)
     log("  Only genotypes with perm_FDR well below ~0.5 carry signal beyond chance.\n")
 
