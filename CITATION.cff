@@ -1,0 +1,83 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software or its derived results, please cite it using the
+  metadata below, and cite the underlying public datasets separately — their
+  version-pinned DOIs are listed in DOWNLOAD_CHECKLIST.md.
+title: >-
+  sprime-lung-repro: reproducible S' analysis and statistical controls for
+  genotype-selective drug vulnerabilities in lung cancer cell lines
+abstract: >-
+  A deterministic, checksum-guarded reproduction of an S' operational
+  drug-response analysis computed from public PRISM (drug response) and DepMap
+  (somatic mutation) data for 94 lung cancer cell lines. Builds the S' / pS' /
+  delta-pS' metrics per compound-cell-line pair, calls PTEN, CDKN2A, RB1 and
+  TP53 genotypes, and runs the statistical controls needed to interpret the
+  resulting candidate lists: a label-permutation null, a line-centring
+  general-sensitivity control, a per-compound bootstrap confidence-interval
+  gate, a literature-blind concordance benchmark, and a DEMETER2 RNAi
+  genetic-dependency cross-check. Every input is pinned by figshare version and
+  md5; every RNG is seeded; derived tables are written in canonical order so
+  runs are reproducible.
+type: software
+# TODO (maintainer): replace this entity author with named people, adding
+# `family-names`, `given-names` and `orcid` for each. Zenodo and the citation
+# formats below propagate whatever is recorded here, so a named author list is
+# worth adding before minting a release DOI. Kept generic for now to match the
+# LICENSE copyright line rather than guess at attribution.
+authors:
+  - name: The sprime-lung-repro authors
+    alias: donbr
+    website: https://github.com/donbr/sprime-lung-repro
+repository-code: https://github.com/donbr/sprime-lung-repro
+url: https://github.com/donbr/sprime-lung-repro
+license: MIT
+keywords:
+  - synthetic lethality
+  - lung cancer
+  - pharmacogenomics
+  - drug response
+  - PRISM
+  - DepMap
+  - reproducibility
+  - computational biology
+references:
+  - type: article
+    title: >-
+      Discovering the anti-cancer potential of non-oncology drugs by systematic
+      viability profiling
+    authors:
+      - family-names: Corsello
+        given-names: Steven M.
+      - family-names: Nagari
+        given-names: Rohith T.
+      - family-names: Spangler
+        given-names: Ryan D.
+    journal: Nature Cancer
+    year: 2020
+    volume: 1
+    issue: 2
+    start: 235
+    end: 248
+    doi: 10.1038/s43018-019-0018-6
+    notes: >-
+      Methodology for the PRISM Repurposing secondary screen, the drug-response
+      source for every S' value computed here. PMID 32613204.
+  - type: article
+    title: >-
+      Improved estimation of cancer dependencies from large-scale RNAi screens
+      using model-based normalization and data integration
+    authors:
+      - family-names: McFarland
+        given-names: James M.
+      - family-names: Ho
+        given-names: Zandra V.
+      - family-names: Kugener
+        given-names: Guillaume
+    journal: Nature Communications
+    year: 2018
+    volume: 9
+    issue: 1
+    doi: 10.1038/s41467-018-06916-5
+    notes: >-
+      DEMETER2, the RNAi genetic-dependency source used by
+      demeter_validation.py. PMID 30389920.
