@@ -8,33 +8,20 @@ blind to ΔpS′ (see PROTOCOL_literature_blind_concordance.md).
 
 Usage:  python concordance_enrichment.py --reference reference_seed_grounded.csv [--perm 10000]
 """
-import argparse, os, re, sys, math
+import argparse, os, re, sys
 import numpy as np, pandas as pd
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from _common import safe_stdout
-from sprime_core import DELTA_LE, MIN_LINES, passes_window
+from sprime_core import MIN_LINES, passes_window
+from scipy.stats import hypergeom
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
-try:
-    from scipy.stats import hypergeom
-    def hyper_sf(k, N, K, n): return float(hypergeom.sf(k - 1, N, K, n))
-except Exception:
-    def _logC(n, r):
-        if r < 0 or r > n: return -math.inf
-        return math.lgamma(n + 1) - math.lgamma(r + 1) - math.lgamma(n - r + 1)
-    def hyper_sf(k, N, K, n):
-        # P(X>=k), X~Hypergeom(pop=N, successes=K, draws=n)
-        lo, hi = max(0, n + K - N), min(K, n); tot = 0.0
-        for x in range(k, hi + 1):
-            tot += math.exp(_logC(K, x) + _logC(N - K, n - x) - _logC(N, n))
-        return min(1.0, tot)
 
 def candidates(mat, wt, mu):
     w = mat.reindex(columns=wt); m = mat.reindex(columns=mu)
     ok = (w.notna().sum(1) >= MIN_LINES) & (m.notna().sum(1) >= MIN_LINES)
-    d = w.mean(1) - m.mean(1)
     return set(ok[ok].index), set((ok & passes_window(w.mean(1), m.mean(1))).pipe(lambda s: s[s]).index)
 
 def token_match(target, text):
@@ -83,7 +70,7 @@ def main():
         R = resolved & universe
         k = len(R & cand); nR = len(R); N = len(universe); K = len(cand)
         rec = k / nR if nR else float("nan")
-        hp = hyper_sf(k, N, K, nR) if nR else float("nan")
+        hp = float(hypergeom.sf(k - 1, N, K, nR)) if nR else float("nan")
         # permutation: draw K random 'candidates' from universe, overlap with R
         if nR and K:
             # sorted(), not list(): `universe` is a set of compound-name strings, and Python
