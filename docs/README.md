@@ -18,6 +18,9 @@ as-yet-uncorroborated enrichment, both beyond chance under this repository's own
   and what each found.
 - **Understand the limits** — [`scope.md`](scope.md): the analyses this repository does not perform, and
   what a reader must not infer from their absence.
+- **Check a claim yourself** — [`verifying.md`](verifying.md): which command substantiates which claim, from
+  a seconds-long synthetic test up to a full ~560 MB reproduction, and what each command does and does not
+  prove.
 
 ## How the pieces fit
 

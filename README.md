@@ -77,4 +77,6 @@ committed results CSVs (the real 400 MB inputs cannot live in CI); see `.github/
 `docs/` explains the analysis for a reader arriving cold: [`docs/method.md`](docs/method.md) for the S′
 metric and genotype calling, [`docs/evidence.md`](docs/evidence.md) for the four statistical controls and
 what each established, and [`docs/scope.md`](docs/scope.md) for the analyses this repository deliberately
-does not perform. Start at [`docs/README.md`](docs/README.md).
+does not perform. For "how do I check this myself," see [`docs/verifying.md`](docs/verifying.md): which
+command substantiates which claim, from a seconds-long synthetic test up to a full reproduction. Start at
+[`docs/README.md`](docs/README.md).

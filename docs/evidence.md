@@ -63,6 +63,9 @@ cohort split, and compares the observed candidate count to that null distributio
 | RB1 | 94 | 63.6 | 0.095 | 0.68 |
 | TP53 | 16 | 20.3 | 0.596 | 1.27 |
 
+This is the headline finding, and [verifying.md](verifying.md) walks through reproducing this exact table,
+row by row, from a fresh `run_all.py` run.
+
 Only RB1 (p = 0.095) approaches conventional significance, and it does not reach it. PTEN is the starkest
 case: 97 observed candidates against a null mean of 97.0 — the window found exactly as many candidates for
 PTEN as randomly shuffled genotype labels would, on average. TP53's observed count (16) sits *below* its null
@@ -185,7 +188,9 @@ is absent from the table above. The result against this starter set should be re
 protocol rather than as a finished, comprehensive benchmark — the starter set itself is a first pass, not a
 systematic literature review, and its own provenance gaps are documented in [scope.md](scope.md).
 
-With that caveat, RB1 and TP53 stand on different footing, and the difference matters more than the two
+The claim-to-evidence table in [verifying.md](verifying.md) lays out exactly which of these findings rest
+on prior art, on computation here, or both. With that caveat, RB1 and TP53 stand on different footing, and
+the difference matters more than the two
 p-values' similar magnitude suggests. RB1's recovery is corroborated by independent literature: Aurora A
 inhibition (Gong et al. 2019, PMID 30373917) and Aurora B dependency (Oser et al. 2019, PMID 30373918) are
 each independently established as RB1-loss-selective vulnerabilities in RB1-deficient models, so RB1's
@@ -275,7 +280,8 @@ This section deliberately quotes no DEMETER2 result at all, per-target figure or
 pinned inputs, and its output is accordingly not committed to `results/`. Nothing here — no number and no
 claim about which way a target came out — would be verifiable against committed data, which is precisely
 the standard this repository's other figures are held to. What is verifiable from the committed script is
-its construction and its own reading guide, and that is all this section reports.
+its construction and its own reading guide, and that is all this section reports. See "What cannot be
+verified" in [verifying.md](verifying.md).
 
 ## What this adds up to
 

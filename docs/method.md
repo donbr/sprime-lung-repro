@@ -215,8 +215,10 @@ Three things about this table are easy to misread. First, for TP53 the *wild-typ
 what a reader skimming "TP53 mutation" as the rare case would assume; outlier sensitivity for TP53 results
 applies to the wild-type side. Second, PTEN's mutant cohort has only 3 lines — exactly the coverage
 minimum, so a compound must be measured in every one of them to be tested at all, and every PTEN result
-rests on those three lines and should be read as fragile. Third, these are the counts
-this code produces from the committed DepMap release; the companion manuscript's Supplement 9 reports 80/13
+rests on those three lines and should be read as fragile. Third, these counts are reproducible from the
+pinned public inputs — Tier 1 in [verifying.md](verifying.md) walks through `fetch_data.py` and
+`run_all.py`. They are the counts this code produces from the committed DepMap release; the companion
+manuscript's Supplement 9 reports 80/13
 for CDKN2A and 18/72 for TP53, and `sprime_pipeline.py` treats the difference as acceptable because its
 built-in tolerance is ±3 wild-type and ±2 mutant lines per gene. PTEN and RB1 reproduce the manuscript's
 counts exactly; CDKN2A and TP53 are close but not identical, and should not be described as reproducing.
@@ -249,7 +251,8 @@ flowchart LR
 ## The worked example
 
 One compound–cell-line pair anchors the whole metric to a hand-checkable number: doxorubicin in A549, with
-a fitted upper limit of 1.000, lower limit of 0.00103, and EC₅₀ of 0.2449 µM, gives S′ = 6.704.
+a fitted upper limit of 1.000, lower limit of 0.00103, and EC₅₀ of 0.2449 µM, gives S′ = 6.704. Run this
+check yourself in seconds — see Tier 0 in [verifying.md](verifying.md).
 `tests/test_synthetic.py::test_sprime_worked_example` recomputes S′ from those inputs on every run and
 asserts it lands within 0.05 of 6.70 — a tolerance, not an exact equality, so the check survives ordinary
 floating-point variation while still failing on any real change to the formula. This number also
