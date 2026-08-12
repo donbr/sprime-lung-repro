@@ -136,6 +136,13 @@ prints S′ notation needs the same call, and any file written with those charac
 **Exit codes carry meaning.** `sprime_pipeline.py`: 0 = ok, 1 = a validation anchor mismatched (continue
 but review), 2 = missing input, 3 = checksum/wrong release. `run_all.py` aborts on ≥ 2 and only warns on 1.
 
+**The docs quote committed results.** `docs/evidence.md` and `docs/method.md` reproduce figures from
+`results/*.csv` and `concordance/results/concordance_report.csv` in markdown tables, and
+`tests/test_docs_numbers.py` asserts they match — it runs in CI. Regenerating the results baseline
+therefore requires updating those tables in the same commit, or the build fails. Numbers the repo does not
+compute (the 4PL pathology percentages, the PRISM dilution scheme) are attributed inline and are not
+covered by the test.
+
 ## Validation anchors
 
 These are correctness checks, not decoration — if a change breaks one, the change is wrong:

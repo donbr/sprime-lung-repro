@@ -26,3 +26,5 @@ jobs:
         run: python -m py_compile _common.py sprime_core.py sprime_pipeline.py blocking_analyses.py bootstrap_ci_gate.py demeter_validation.py fetch_data.py run_all.py concordance/concordance_enrichment.py
       - name: Synthetic smoke test
         run: python tests/test_synthetic.py
+      - name: Documentation figures match committed results
+        run: python tests/test_docs_numbers.py
