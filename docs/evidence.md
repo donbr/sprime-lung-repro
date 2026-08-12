@@ -24,7 +24,8 @@ the test.
 An **empirical p-value** counts how many shuffles matched or beat the observed candidate count. The exact
 estimator used here is the add-one form — `(np.sum(null >= nobs) + 1) / (a.perm + 1)` at
 `blocking_analyses.py:59` — which adds one to both numerator and denominator so that a p-value is never
-reported as exactly zero merely because no shuffle happened to beat the observed count in the 2,000 drawn.
+reported as exactly zero merely because no shuffle happened to beat the observed count in the 2,000 drawn
+(Phipson & Smyth 2010, PMID 21044043 [L7]).
 A small p-value means shuffled genotype labels almost never produced as many candidates as the real labels
 did, which is evidence the real labels are doing something. A **permutation FDR** (false discovery rate) is the
 expected number of false candidates a shuffle would produce, divided by the observed candidate count — an FDR
@@ -236,12 +237,16 @@ flowchart TD
 ## Cross-check — DEMETER2 RNAi
 
 The controls above all operate on the same drug-response data the SL window was built from. `demeter_validation.py`
-provides an orthogonal cross-check using a different modality entirely: DEMETER2 genetic-dependency scores from
+provides an orthogonal cross-check using a different modality entirely: DEMETER2 genetic-dependency scores
+(McFarland et al. 2018, PMID 30389920 [L2]; dataset doi:10.6084/m9.figshare.6025238.v6, version 6 [D3]) from
 RNAi knockdown, rather than small-molecule drug response. The construction deliberately mirrors the drug-side
 metric so the two are comparable: D = −DEMETER2, so that a positive D means a gene knockdown was more damaging
 to a cell line, i.e. that line is more *dependent* on the gene — the same sign convention S′ uses for "more
 inhibited." ΔpD = pD_WT − pD_mutant, matching ΔpS′'s WT-minus-mutant convention, so a negative ΔpD again means
-the mutant cohort is more dependent than the wild-type cohort on knockdown of that gene.
+the mutant cohort is more dependent than the wild-type cohort on knockdown of that gene. Per gene,
+`demeter_validation.py` compares the two cohorts with a Mann–Whitney U test (Mann & Whitney 1947,
+doi:10.1214/aoms/1177730491 [L9]) and applies Benjamini–Hochberg FDR correction (Benjamini & Hochberg 1995,
+doi:10.1111/j.2517-6161.1995.tb02031.x [L8]) across the tested genes within each genotype.
 
 The informative case is RB1, and it is worth being exact about what this repository records. The analysis is
 *constructed to test* a two-directional expectation, not reported here as having met it: the RB–E2F axis
@@ -250,9 +255,11 @@ CDK4/6 should score wild-type-selective (RB1-intact lines more dependent on CDK4
 behind that expectation is standard: RB1-intact cells rely on CDK4/6 to phosphorylate and inactivate RB1 and
 permit cell-cycle progression, while RB1-null cells have already lost that checkpoint and bypass the CDK4/6
 dependency entirely, instead becoming more reliant on the downstream E2F machinery RB1 would otherwise
-restrain. `demeter_validation.py` names the CDK4/6 half in its own output legend as the reference case a
-reader should look for — "ΔpD > 0 with q_wt < 0.10 => WT-selective (e.g. CDK4/6 under RB1 loss — a positive
-control)". A contrast that can fail in either direction is a stronger check on contrast direction than one
+restrain — the causal direction demonstrated by RB1 knockdown conferring CDK4/6-inhibitor resistance
+(Michaud et al. 2010, PMID 20354191 [L5]). `demeter_validation.py` names the CDK4/6 half in its own output
+legend as the reference case a reader should look for — "ΔpD > 0 with q_wt < 0.10 => WT-selective (e.g.
+CDK4/6 under RB1 loss — a positive control)". A contrast that can fail in either direction is a stronger
+check on contrast direction than one
 more hit list would be; whether this particular run passes it is not something this repository can show, for
 the reason given two paragraphs below.
 
@@ -290,3 +297,33 @@ a narrow claim about this method, not a broad one: it is not evidence of a gener
 selective-vulnerability classifier, but it is evidence that the window can and does recover real pharmacology
 for RB1, backed by independent literature, and a real, reproducible internal signal for TP53 whose biological
 meaning is not yet independently established.
+
+## References
+
+[L2] McFarland JM, Ho ZV, Kugener G, et al. Improved estimation of cancer dependencies from large-scale RNAi
+screens using model-based normalization and data integration. *Nature Communications* 2018;9(1):4610.
+PMID 30389920. doi:10.1038/s41467-018-06916-5
+
+[D3] DEMETER2 data (figshare dataset, version 6). doi:10.6084/m9.figshare.6025238.v6
+
+[L3] Gong X, Du J, Parsons SH, et al. Aurora A Kinase Inhibition Is Synthetic Lethal with Loss of the RB1
+Tumor Suppressor Gene. *Cancer Discovery* 2019;9(2):248–263. PMID 30373917. doi:10.1158/2159-8290.CD-18-0469
+
+[L4] Oser MG, Fonseca R, Chakraborty AA, et al. Cells Lacking the RB1 Tumor Suppressor Gene Are
+Hyperdependent on Aurora B Kinase for Survival. *Cancer Discovery* 2019;9(2):230–247. PMID 30373918.
+doi:10.1158/2159-8290.CD-18-0389
+
+[L5] Michaud K, Solomon DA, Oermann E, et al. Pharmacologic inhibition of cyclin-dependent kinases 4 and 6
+arrests the growth of glioblastoma multiforme intracranial xenografts. *Cancer Research* 2010;70(8):3228–3238.
+PMID 20354191. doi:10.1158/0008-5472.CAN-09-4559
+
+[L7] Phipson B, Smyth GK. Permutation P-values should never be zero: calculating exact P-values when
+permutations are randomly drawn. *Statistical Applications in Genetics and Molecular Biology* 2010;9:Article39.
+PMID 21044043. doi:10.2202/1544-6115.1585
+
+[L8] Benjamini Y, Hochberg Y. Controlling the False Discovery Rate: A Practical and Powerful Approach to
+Multiple Testing. *Journal of the Royal Statistical Society: Series B (Methodological)* 1995;57(1):289–300.
+doi:10.1111/j.2517-6161.1995.tb02031.x
+
+[L9] Mann HB, Whitney DR. On a Test of Whether one of Two Random Variables is Stochastically Larger than
+the Other. *The Annals of Mathematical Statistics* 1947;18(1):50–60. doi:10.1214/aoms/1177730491

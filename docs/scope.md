@@ -62,7 +62,8 @@ output, not measurement.
 
 Genotype calls, as described in `method.md`, come from the damaging-mutation matrix alone. That matrix
 cannot see a deep deletion — a gene lost entirely, with no point mutation to call. CDKN2A in particular is
-inactivated in lung cancer predominantly by homozygous deletion rather than by point mutation, so cell lines
+inactivated in lung cancer predominantly by homozygous deletion rather than by point mutation (TCGA Research
+Network 2012, PMID 22960745 [L6]), so cell lines
 carrying a CDKN2A deep deletion are scored wild type by this pipeline's genotype-calling logic, quietly
 contaminating the wild-type cohort with lines that are functionally CDKN2A-null. That contamination biases
 ΔpS′ toward zero for the CDKN2A arm — a real mutant-selective effect would be diluted by wild-type-labeled
@@ -139,3 +140,8 @@ then reads — see `CONNECTORS.md` for how that boundary is kept. This is what m
 reproducible and safe to run in CI. The cost is that curation — including the incomplete provenance
 described above — is a manual step that happens outside the pipeline and is not itself verified by any
 script in this repository.
+
+## References
+
+[L6] The Cancer Genome Atlas Research Network. Comprehensive genomic characterization of squamous cell lung
+cancers. *Nature* 2012;489(7417):519–525. PMID 22960745. doi:10.1038/nature11404
