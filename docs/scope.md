@@ -113,8 +113,22 @@ mandatory: search terms and provenance are supposed to be recorded precisely so 
 checked as having been assembled independently of this analysis's own output, not selected to match it.
 With those fields unfilled on most or all rows, that independence is asserted rather than demonstrated for
 this seed set. Those fields are load-bearing, not bookkeeping — the whole remedy for the manuscript's
-circularity problem rests on them. Treat the concordance numbers reported in `evidence.md` as illustrative
-of the protocol working, not as a finished or comprehensive benchmark.
+circularity problem rests on them.
+
+There is a second, separate gap in that reference set, about resolution rather than provenance, and nothing
+in this repository closes it. A reference row names a *target*, not a compound, so
+`concordance_enrichment.py` expands each row by token-matching that target against **PRISM's own target and
+MOA annotation strings** — which is how 7 curated rows become the 49, 10 and 5 "reference in universe"
+compounds reported in `evidence.md`. Those annotations are third-party metadata that this repository takes
+at face value and never audits: the referee review of the companion manuscript (in review) flagged them as
+sometimes wrong, and `concordance/README.md` (caveat 2) records barasertib as a specific mis-annotated
+example. Every enrichment p-value in `evidence.md` therefore inherits whatever annotation errors PRISM
+carries — a compound annotated to the wrong target inflates or deflates the reference set silently, and no
+script here spot-checks the resolved lists. Neither the recovery counts nor the misses can be read as
+cleaner than the annotation layer underneath them.
+
+Treat the concordance numbers reported in `evidence.md` as illustrative of the protocol working, not as a
+finished or comprehensive benchmark.
 
 ## No network access at analysis time
 
