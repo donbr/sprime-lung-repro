@@ -1,13 +1,14 @@
 # What the controls established
 
 Applying the synthetic-lethal (SL) window described in [method.md](method.md) produces candidate lists —
-compound–genotype pairs that clear pS′_WT > 0, pS′_mutant > 0, ΔpS′ ≤ −2, and the `MIN_LINES = 3` cohort-size
-floor. A candidate list on its own does not say whether those candidates are real. This document walks
-through the four controls this repository runs against its own output, and states plainly what each one
-found. The honest headline is this: under a label-permutation null, only RB1's candidate count rises above
-chance, and only marginally; the lists thin sharply again under a bootstrap confidence-interval gate. That
-near-null result is a finding of the analysis, not a bug in the code or in this write-up — read the rest of
-this document as an account of exactly how much the window's candidate lists can and cannot support.
+compound–genotype pairs that clear pS′_WT > 0, pS′_mutant > 0, ΔpS′ ≤ −2, and the `MIN_LINES = 3` coverage
+floor of three non-missing S′ measurements per pool. A candidate list on its own does not say whether
+those candidates are real. This document walks through the four controls this repository runs against its
+own output, and states plainly what each one found. The honest headline is this: under a label-permutation
+null, only RB1's candidate count rises above chance, and only marginally; the lists thin sharply again
+under a bootstrap confidence-interval gate. That near-null result is a finding of the analysis, not a bug
+in the code or in this write-up — read the rest of this document as an account of exactly how much the
+window's candidate lists can and cannot support.
 
 ## A statistics primer
 

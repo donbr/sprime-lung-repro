@@ -59,7 +59,9 @@ is what motivates a signed metric and the manuscript's own argument runs in that
    interpretable inhibition, activity in mutant makes the dependency pharmacologically accessible, and
    the −2 threshold imposes a minimum effect size. Include the fold-change reading — for candidates
    sitting at pS′ ≈ 2–4, ΔpS′ ≤ −2 amounts to requiring roughly a 7.4-fold greater potency–efficacy
-   ratio in mutant cells. Note that `MIN_LINES = 3` per pool is a repo-level condition. Diagram D4.
+   ratio in mutant cells. Note the repo-level fourth condition, `MIN_LINES = 3`, and state what it counts:
+   measurement coverage, not pool size — at least three *non-missing* S′ values per pool for each compound
+   separately (`blocking_analyses.py:22`). Do not describe it as a cohort-size floor. Diagram D4.
 6. **Interpretive framing.** Why retaining sign matters: one signed axis separates actionable
    vulnerabilities, counter-therapeutic states, and genotype-independent cytotoxicity. Attributed to the
    companion manuscript, not asserted as this repo's finding. Diagrams D5 and D6.
@@ -124,7 +126,7 @@ Nine mermaid diagrams. Type is specified because it determines whether GitHub re
 | D1 | Pipeline overview | `flowchart LR` | README | Pinned inputs → `sprime_pipeline.py` → the two derived tables → the four consuming scripts → `results/`. Script filenames included so the diagram doubles as repo navigation. |
 | D2 | 4PL fit outcomes | `flowchart TD` | method | One fit branching into canonical and the four pathologies, each labeled with its percentage. |
 | D3 | S′ construction | `flowchart LR` | method | upper/lower asymptote → signed E_max → ×100 → ÷EC₅₀ → ×1 µM → asinh → signed S′. Each convention visible at the step where it enters. |
-| D4 | SL window decision tree | `flowchart TD` | method | The four gates in order (≥3 lines per pool, pS′_WT > 0, pS′_MUT > 0, ΔpS′ ≤ −2) with labeled reject branches. |
+| D4 | SL window decision tree | `flowchart TD` | method | The four gates in order (≥3 non-missing S′ values per pool, pS′_WT > 0, pS′_MUT > 0, ΔpS′ ≤ −2) with labeled reject branches. |
 | D5 | Two-mode operational states | `stateDiagram-v2` | method | Inhibitory, inert, and disinhibitory as distinct states sharing one signed axis, with genotype governing which are accessible rather than altering a state's internal structure. |
 | D6 | Triage framework | `flowchart TD` | method | One signed axis resolving to actionable, unsafe/counter-therapeutic, and genotype-independent cytotoxic. |
 | D7 | Provenance chain | `flowchart LR` | method | Versioned figshare record → `.part` → md5 + size check → placed on pass, quarantined as `.bad` on fail → pipeline re-verifies and reports release. |

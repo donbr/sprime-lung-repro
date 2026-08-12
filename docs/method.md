@@ -115,7 +115,7 @@ The sign here trips up readers on first read: because ΔpS′ is WT minus mutant
 ## The synthetic-lethal window
 
 A compound–genotype pair is called a candidate only if it clears three conditions on pS′, plus one
-condition on cohort size.
+condition on measurement coverage.
 
 pS′_WT > 0 requires the wild-type response to be a genuine inhibition, not a null effect or a
 disinhibition — without this, ΔpS′ could go very negative simply because the wild-type cohort responded
@@ -211,8 +211,9 @@ TP53, across the 94 lung lines the pipeline analyzes.
 Three things about this table are easy to misread. First, for TP53 the *wild-type* cohort is the small one
 (17 lines) and the mutant cohort is large (73) — the reverse of PTEN, CDKN2A, and RB1, and the reverse of
 what a reader skimming "TP53 mutation" as the rare case would assume; outlier sensitivity for TP53 results
-applies to the wild-type side. Second, PTEN's mutant cohort has only 3 lines, at the `MIN_LINES` floor —
-every PTEN result rests on those three lines and should be read as fragile. Third, these are the counts
+applies to the wild-type side. Second, PTEN's mutant cohort has only 3 lines — exactly the coverage
+minimum, so a compound must be measured in every one of them to be tested at all, and every PTEN result
+rests on those three lines and should be read as fragile. Third, these are the counts
 this code produces from the committed DepMap release; the companion manuscript's Supplement 9 reports 80/13
 for CDKN2A and 18/72 for TP53, and `sprime_pipeline.py` treats the difference as acceptable because its
 built-in tolerance is ±3 wild-type and ±2 mutant lines per gene. PTEN and RB1 reproduce the manuscript's
