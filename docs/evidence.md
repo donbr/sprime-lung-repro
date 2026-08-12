@@ -24,7 +24,8 @@ the test.
 An **empirical p-value** counts how many shuffles matched or beat the observed candidate count. The exact
 estimator used here is the add-one form — `(np.sum(null >= nobs) + 1) / (a.perm + 1)` at
 `blocking_analyses.py:59` — which adds one to both numerator and denominator so that a p-value is never
-reported as exactly zero merely because no shuffle happened to beat the observed count in the 2,000 drawn.
+reported as exactly zero merely because no shuffle happened to beat the observed count in the 2,000 drawn
+(Phipson & Smyth 2010, PMID 21044043 [L7]).
 A small p-value means shuffled genotype labels almost never produced as many candidates as the real labels
 did, which is evidence the real labels are doing something. A **permutation FDR** (false discovery rate) is the
 expected number of false candidates a shuffle would produce, divided by the observed candidate count — an FDR
@@ -61,6 +62,9 @@ cohort split, and compares the observed candidate count to that null distributio
 | CDKN2A | 48 | 41.7 | 0.315 | 0.87 |
 | RB1 | 94 | 63.6 | 0.095 | 0.68 |
 | TP53 | 16 | 20.3 | 0.596 | 1.27 |
+
+This is the headline finding, and [verifying.md](verifying.md) walks through reproducing this exact table,
+row by row, from a fresh `run_all.py` run.
 
 Only RB1 (p = 0.095) approaches conventional significance, and it does not reach it. PTEN is the starkest
 case: 97 observed candidates against a null mean of 97.0 — the window found exactly as many candidates for
@@ -184,12 +188,22 @@ is absent from the table above. The result against this starter set should be re
 protocol rather than as a finished, comprehensive benchmark — the starter set itself is a first pass, not a
 systematic literature review, and its own provenance gaps are documented in [scope.md](scope.md).
 
-With that caveat, the honest reading is this: RB1 and TP53 recover specific, well-established biology at
-well beyond what chance overlap would predict (p = 0.0013 and p = 5.6×10⁻⁸ respectively — TP53's on the
-strength of a single target, as above), even though their
-overall candidate lists sit near the permutation null in Control 1. Put together, the SL window recovers real
-pharmacology for at least these two genes without behaving as a general-purpose, genome-wide selective
-classifier — the two results are not in tension, they describe different things.
+The claim-to-evidence table in [verifying.md](verifying.md) lays out exactly which of these findings rest
+on prior art, on computation here, or both. With that caveat, RB1 and TP53 stand on different footing, and
+the difference matters more than the two
+p-values' similar magnitude suggests. RB1's recovery is corroborated by independent literature: Aurora A
+inhibition (Gong et al. 2019, PMID 30373917) and Aurora B dependency (Oser et al. 2019, PMID 30373918) are
+each independently established as RB1-loss-selective vulnerabilities in RB1-deficient models, so RB1's
+p = 0.0013 enrichment here is a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
+equally real and reproducible — it is not a fluke of this dataset — but it has no independent literature
+support: no PubMed-indexed study demonstrates TP53-mutant-selective sensitivity to KIF11/Eg5 inhibitors,
+KIF11 is broadly common-essential rather than genotype-selective (`CONNECTORS.md`, and the seed row's own
+`inclusion_rationale` in `reference_seed_grounded.csv` reads "common-essential"), and the p-value traces to a
+single seed row (target KIF11, compound ispinesib), as above. TP53's enrichment is therefore an internal
+empirical finding of this dataset, not corroboration of known biology — real and worth investigating further,
+but not evidence that TP53-selective KIF11 dependence is an established phenomenon. Put together, the SL
+window recovers literature-corroborated pharmacology for RB1 and a reproducible-but-uncorroborated enrichment
+for TP53, without behaving as a general-purpose, genome-wide selective classifier for either.
 
 ```mermaid
 flowchart TD
@@ -228,39 +242,62 @@ flowchart TD
 ## Cross-check — DEMETER2 RNAi
 
 The controls above all operate on the same drug-response data the SL window was built from. `demeter_validation.py`
-provides an orthogonal cross-check using a different modality entirely: DEMETER2 genetic-dependency scores from
+provides an orthogonal cross-check using a different modality entirely: DEMETER2 genetic-dependency scores
+(McFarland et al. 2018, PMID 30389920 [L2]; dataset doi:10.6084/m9.figshare.6025238.v6, version 6 [D3]) from
 RNAi knockdown, rather than small-molecule drug response. The construction deliberately mirrors the drug-side
 metric so the two are comparable: D = −DEMETER2, so that a positive D means a gene knockdown was more damaging
 to a cell line, i.e. that line is more *dependent* on the gene — the same sign convention S′ uses for "more
 inhibited." ΔpD = pD_WT − pD_mutant, matching ΔpS′'s WT-minus-mutant convention, so a negative ΔpD again means
-the mutant cohort is more dependent than the wild-type cohort on knockdown of that gene.
+the mutant cohort is more dependent than the wild-type cohort on knockdown of that gene. Per gene,
+`demeter_validation.py` compares the two cohorts with a Mann–Whitney U test (Mann & Whitney 1947,
+doi:10.1214/aoms/1177730491 [L9]) and applies Benjamini–Hochberg FDR correction (Benjamini & Hochberg 1995,
+doi:10.1111/j.2517-6161.1995.tb02031.x [L8]) across the tested genes within each genotype.
 
-The informative case is RB1, and it is worth being exact about what this repository records. The analysis is
-*constructed to test* a two-directional expectation, not reported here as having met it: the RB–E2F axis
-should score mutant-selective (RB1-null lines more dependent on RB–E2F pathway components, ΔpD < 0) while
-CDK4/6 should score wild-type-selective (RB1-intact lines more dependent on CDK4/6, ΔpD > 0). The biology
-behind that expectation is standard: RB1-intact cells rely on CDK4/6 to phosphorylate and inactivate RB1 and
-permit cell-cycle progression, while RB1-null cells have already lost that checkpoint and bypass the CDK4/6
-dependency entirely, instead becoming more reliant on the downstream E2F machinery RB1 would otherwise
-restrain. `demeter_validation.py` names the CDK4/6 half in its own output legend as the reference case a
-reader should look for — "ΔpD > 0 with q_wt < 0.10 => WT-selective (e.g. CDK4/6 under RB1 loss — a positive
-control)". A contrast that can fail in either direction is a stronger check on contrast direction than one
-more hit list would be; whether this particular run passes it is not something this repository can show, for
-the reason given two paragraphs below.
+`results/demeter_validation.csv` (36 rows, across CDKN2A, RB1 and TP53) is committed, and this section
+reports what it actually found.
 
-There is a reading trap worth flagging explicitly: the one-sided q-value in this analysis tests only the
-hypothesis "mutant is more dependent than wild type." A genuine, real wild-type-selective effect — the
-CDK4/6 case above, should it hold — will score a one-sided q close to 1, which looks like "no effect" if read carelessly,
-when it is actually a strong effect in the *other* direction. Always read the `direction` column before
-looking at any q-value at all, and prefer the two-sided `q_two` column when the direction itself is the
-question rather than assumed in advance.
+RB1's cohort here is 6 mutant / 70 WT lines — smaller than any of the four PRISM cohorts in `method.md`'s
+cohort table — and it recovers a two-directional expectation at once, which functions as an internal
+control on contrast direction rather than a plain hit list. The RB–E2F axis comes out mutant-selective:
+SKP2 (ΔpD -0.317, q_two 0.0081), CCNE2 (ΔpD -0.152, q_two 0.0127) and E2F4 (ΔpD -0.127, q_two 0.0127) are
+all more depended-on in RB1-mutant lines, alongside AKT1 (ΔpD -0.104, q_two 0.0493). In the same contrast,
+CDK4 (ΔpD +0.336, q_two 0.0081) and CDK6 (ΔpD +0.400, q_two <0.0001) come out wild-type-selective —
+RB1-intact lines are the ones that depend on CDK4/6, the reverse direction from the RB–E2F axis above,
+recovered in the same run rather than asserted separately. The biology behind that expectation is standard:
+RB1-intact cells rely on CDK4/6 to phosphorylate and inactivate RB1 and permit cell-cycle progression, while
+RB1-null cells have already lost that checkpoint and bypass the CDK4/6 dependency entirely, instead becoming
+more reliant on the downstream E2F machinery RB1 would otherwise restrain — the causal direction demonstrated
+by RB1 knockdown conferring CDK4/6-inhibitor resistance (Michaud et al. 2010, PMID 20354191 [L5]).
+`demeter_validation.py` names the CDK4/6 half in its own output legend as the reference case a reader should
+look for — "ΔpD > 0 with q_wt < 0.10 => WT-selective (e.g. CDK4/6 under RB1 loss — a positive control)" —
+and this committed run clears it.
 
-This section deliberately quotes no DEMETER2 result at all, per-target figure or direction:
-`demeter_validation.py` requires an optional DEMETER2 input file that is not part of this repository's
-pinned inputs, and its output is accordingly not committed to `results/`. Nothing here — no number and no
-claim about which way a target came out — would be verifiable against committed data, which is precisely
-the standard this repository's other figures are held to. What is verifiable from the committed script is
-its construction and its own reading guide, and that is all this section reports.
+Two targets in the same RB1 contrast do not reach significance, and that matters just as much as the hits
+above: AURKB (ΔpD -0.120, q_two 0.5487) and AURKA (ΔpD -0.055, q_two 0.7789) both point the mutant-selective
+direction but land nowhere near it statistically. Control 4 above cites independent literature for
+RB1-loss-selective Aurora dependency — Aurora A (Gong et al. 2019, PMID 30373917 [L3]) and Aurora B (Oser et
+al. 2019, PMID 30373918 [L4]) — but that evidence comes from drug response, a different modality entirely.
+This RNAi cross-check does not corroborate it: the RNAi support recovered here is for the RB–E2F axis and
+AKT1, not for Aurora selectivity, and the two must not be read as reinforcing each other.
+
+TP53's one target, KIF11, is borderline: KIF11 (ΔpD -0.317, q_two 0.1159), directionally mutant-selective —
+matching the drug-response KIF11 enrichment discussed in Control 4 — but not clearing the 0.10 threshold used
+throughout this section. This reinforces, rather than contradicts, the correction already made about
+TP53/KIF11 above: a directionally consistent signal across two independent modalities, not confirmation of an
+established biological mechanism.
+
+PTEN does not appear in `results/demeter_validation.csv` at all. Its DEMETER2-covered mutant cohort falls
+below the `--min-lines` floor of 5 that `demeter_validation.py` applies to every target, so no PTEN target
+can be assessed by RNAi under this cross-check. That is a coverage limit on this analysis, not a null
+finding about PTEN.
+
+There is a reading trap worth flagging explicitly: the one-sided q-value in this analysis (`bh_q`, called
+`q_mut` in the script's own working) tests only the hypothesis "mutant is more dependent than wild type." A
+genuine, real wild-type-selective effect — CDK4/6 above is exactly this case in the committed data — scores
+a one-sided q close to 1 (RB1/CDK6's `bh_q` is 1.0), which looks like "no effect" if read carelessly, when it
+is actually a strong effect in the *other* direction. Always read the `direction` column before looking at
+any q-value at all, and prefer the two-sided `q_two` column when the direction itself is the question rather
+than assumed in advance.
 
 ## What this adds up to
 
@@ -270,10 +307,51 @@ approaches significance under the permutation null, and only marginally. The gen
 that line-centring was built to catch is genuinely absent, which is real evidence in the method's favor. The
 lists nonetheless depend heavily on the metric's absolute-scale anchoring, thinning sharply once cell lines
 are centred or once a bootstrap confidence interval is required to clear the effect-size threshold as a whole
-rather than just at its point estimate. And specific, well-established biology is recovered well beyond chance
-for RB1 and TP53 under an independent literature benchmark — TP53's on a single target — with an orthogonal
-RNAi cross-check *available* to test the RB1 direction in both directions at once, though its result is not
-committed here and this document therefore claims nothing about it. That combination — a near-null result at the level of the whole candidate
-list, alongside real recovery of specific known biology — supports a narrow claim about this method, not a
-broad one: it is not evidence of a general-purpose genome-wide selective-vulnerability classifier, but it is
-evidence that the window can and does recover real, specific pharmacology for at least some genotypes.
+rather than just at its point estimate. RB1's recovery under the literature-blind benchmark is corroborated
+by independent literature (Gong et al. 2019, PMID 30373917; Oser et al. 2019, PMID 30373918); TP53 shows an
+equally strong enrichment in this same benchmark (p = 5.6×10⁻⁸) that is real and reproducible but has no
+independent literature support and so should be read as an internal empirical finding of this dataset rather
+than corroboration of known biology. An orthogonal RNAi cross-check on DEMETER2 genetic-dependency data
+reproduces the RB1 direction in both directions at once — the RB–E2F axis and AKT1 score mutant-selective
+while CDK4/6 score wild-type-selective
+in the identical contrast — though it does not extend to Aurora kinase (AURKA/AURKB fall well short of
+significance in this same RNAi cross-check, even though the drug-response benchmark above corroborates
+Aurora dependency independently), and TP53/KIF11's RNAi signal is directionally consistent but borderline
+rather than confirmatory. That combination — a near-null result at the level of the whole candidate list,
+literature-corroborated recovery for RB1 in the drug-response benchmark, a reproducible-but-uncorroborated
+enrichment for TP53, and an orthogonal RNAi cross-check that reinforces the RB1 axis specifically without
+extending to Aurora — supports a narrow claim about this method, not a broad one: it is not evidence of a
+general-purpose genome-wide selective-vulnerability classifier, but it is evidence that the window can and
+does recover real pharmacology for RB1, backed by independent literature and now by an independent RNAi
+modality, and a real, reproducible internal signal for TP53 whose biological meaning is not yet independently
+established.
+
+## References
+
+[L2] McFarland JM, Ho ZV, Kugener G, et al. Improved estimation of cancer dependencies from large-scale RNAi
+screens using model-based normalization and data integration. *Nature Communications* 2018;9(1):4610.
+PMID 30389920. doi:10.1038/s41467-018-06916-5
+
+[D3] DEMETER2 data (figshare dataset, version 6). doi:10.6084/m9.figshare.6025238.v6
+
+[L3] Gong X, Du J, Parsons SH, et al. Aurora A Kinase Inhibition Is Synthetic Lethal with Loss of the RB1
+Tumor Suppressor Gene. *Cancer Discovery* 2019;9(2):248–263. PMID 30373917. doi:10.1158/2159-8290.CD-18-0469
+
+[L4] Oser MG, Fonseca R, Chakraborty AA, et al. Cells Lacking the RB1 Tumor Suppressor Gene Are
+Hyperdependent on Aurora B Kinase for Survival. *Cancer Discovery* 2019;9(2):230–247. PMID 30373918.
+doi:10.1158/2159-8290.CD-18-0389
+
+[L5] Michaud K, Solomon DA, Oermann E, et al. Pharmacologic inhibition of cyclin-dependent kinases 4 and 6
+arrests the growth of glioblastoma multiforme intracranial xenografts. *Cancer Research* 2010;70(8):3228–3238.
+PMID 20354191. doi:10.1158/0008-5472.CAN-09-4559
+
+[L7] Phipson B, Smyth GK. Permutation P-values should never be zero: calculating exact P-values when
+permutations are randomly drawn. *Statistical Applications in Genetics and Molecular Biology* 2010;9:Article39.
+PMID 21044043. doi:10.2202/1544-6115.1585
+
+[L8] Benjamini Y, Hochberg Y. Controlling the False Discovery Rate: A Practical and Powerful Approach to
+Multiple Testing. *Journal of the Royal Statistical Society: Series B (Methodological)* 1995;57(1):289–300.
+doi:10.1111/j.2517-6161.1995.tb02031.x
+
+[L9] Mann HB, Whitney DR. On a Test of Whether one of Two Random Variables is Stochastically Larger than
+the Other. *The Annals of Mathematical Statistics* 1947;18(1):50–60. doi:10.1214/aoms/1177730491

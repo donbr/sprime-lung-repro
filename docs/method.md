@@ -18,11 +18,12 @@ compound–cell-line pairs, many of which show no effect, a partial effect, or a
 direction.
 
 The companion manuscript (in review) audited the four-parameter logistic (4PL) fits underlying this PRISM
-screen and found that 36% have a lower asymptote above 1.0, 36% have an AUC above 1.0, 3% have an AUC at
-exactly 1.0 (suggestive of instrument or analysis capping), and roughly 49% have a lower asymptote above
-0.5 — meaning the curve never reaches 50% viability, so IC₅₀ is undefined for very nearly half the fits. A
-lower asymptote above 1.0 has a specific physical meaning: at the highest tested concentration, treated
-cells were *more* viable than untreated control. The compound did not inhibit growth; it disinhibited it.
+secondary screen (Corsello et al. 2020, PMID 32613204 [L1]) and found that 36% have a lower asymptote above
+1.0, 36% have an AUC above 1.0, 3% have an AUC at exactly 1.0 (suggestive of instrument or analysis capping),
+and roughly 49% have a lower asymptote above 0.5 — meaning the curve never reaches 50% viability, so IC₅₀ is
+undefined for very nearly half the fits. A lower asymptote above 1.0 has a specific physical meaning: at the
+highest tested concentration, treated cells were *more* viable than untreated control. The compound did not
+inhibit growth; it disinhibited it.
 AUC and IC₅₀ have no vocabulary for that outcome — both either compress it toward "no effect" or fail to
 compute at all. A summary that cannot represent a negative response discards exactly the phenotype a
 synthetic-lethality screen most needs to keep.
@@ -70,11 +71,12 @@ high concentration scores lower than one that produces the same E_max at a much 
 Multiplying by a 1 µM reference concentration makes the ratio dimensionless, so S′ values are comparable
 across compounds regardless of the units EC₅₀ happened to be reported in.
 
-asinh (inverse hyperbolic sine) rather than log is the deliberate choice for the outer transform. Unlike
-log, asinh accepts negative, zero, and positive arguments without special-casing — essential here, since
-E_max / EC₅₀ can be negative. It behaves almost linearly for arguments near zero and almost logarithmically
-for large-magnitude arguments, so it preserves sign and rank order while compressing extremes: one
-extremely potent compound cannot single-handedly drag a cohort mean.
+asinh (inverse hyperbolic sine) rather than log is the deliberate choice for the outer transform — a
+methodological convention stated and adopted here, not a transform inherited from a cited external standard.
+Unlike log, asinh accepts negative, zero, and positive arguments without special-casing — essential here,
+since E_max / EC₅₀ can be negative. It behaves almost linearly for arguments near zero and almost
+logarithmically for large-magnitude arguments, so it preserves sign and rank order while compressing
+extremes: one extremely potent compound cannot single-handedly drag a cohort mean.
 
 Both anchoring choices in the formula are choices, not derivations, and both are load-bearing. E_max is on
 the percent (0–100) scale, not the fraction (0–1) scale, and the reference concentration is 1 µM, not the
@@ -213,8 +215,10 @@ Three things about this table are easy to misread. First, for TP53 the *wild-typ
 what a reader skimming "TP53 mutation" as the rare case would assume; outlier sensitivity for TP53 results
 applies to the wild-type side. Second, PTEN's mutant cohort has only 3 lines — exactly the coverage
 minimum, so a compound must be measured in every one of them to be tested at all, and every PTEN result
-rests on those three lines and should be read as fragile. Third, these are the counts
-this code produces from the committed DepMap release; the companion manuscript's Supplement 9 reports 80/13
+rests on those three lines and should be read as fragile. Third, these counts are reproducible from the
+pinned public inputs — Tier 1 in [verifying.md](verifying.md) walks through `fetch_data.py` and
+`run_all.py`. They are the counts this code produces from the committed DepMap release; the companion
+manuscript's Supplement 9 reports 80/13
 for CDKN2A and 18/72 for TP53, and `sprime_pipeline.py` treats the difference as acceptable because its
 built-in tolerance is ±3 wild-type and ±2 mutant lines per gene. PTEN and RB1 reproduce the manuscript's
 counts exactly; CDKN2A and TP53 are close but not identical, and should not be described as reproducing.
@@ -225,8 +229,10 @@ Every input file is resolved through a version-pinned figshare record — articl
 hard-coded, not "latest" — and verified against a hard-pinned md5 and byte size before it is used. A
 download that fails verification is quarantined with a `.bad` suffix; the canonical path the pipeline reads
 from is never written in that case, so a corrupted or substituted file cannot silently enter the analysis.
-`sprime_pipeline.py` re-verifies the md5 again at read time and reports which DepMap release (24Q2 or 24Q4)
-it detected, since the two releases give identical genotype calls for the analyzed genes but are still
+The two pinned records this document draws on are the PRISM Repurposing 19Q4 secondary screen,
+doi:10.6084/m9.figshare.9393293.v4 [D1], and DepMap Public 24Q2, doi:10.25452/figshare.plus.25880521.v1
+[D2]. `sprime_pipeline.py` re-verifies the md5 again at read time and reports which DepMap release (24Q2 or
+24Q4) it detected, since the two releases give identical genotype calls for the analyzed genes but are still
 worth citing correctly.
 
 ```mermaid
@@ -245,10 +251,22 @@ flowchart LR
 ## The worked example
 
 One compound–cell-line pair anchors the whole metric to a hand-checkable number: doxorubicin in A549, with
-a fitted upper limit of 1.000, lower limit of 0.00103, and EC₅₀ of 0.2449 µM, gives S′ = 6.704.
+a fitted upper limit of 1.000, lower limit of 0.00103, and EC₅₀ of 0.2449 µM, gives S′ = 6.704. Run this
+check yourself in seconds — see Tier 0 in [verifying.md](verifying.md).
 `tests/test_synthetic.py::test_sprime_worked_example` recomputes S′ from those inputs on every run and
 asserts it lands within 0.05 of 6.70 — a tolerance, not an exact equality, so the check survives ordinary
 floating-point variation while still failing on any real change to the formula. This number also
 corrects an arithmetic error present in the companion manuscript's own worked example — so if that test
 ever starts failing on the arithmetic rather than on stale results, the more likely explanation is a
 regression in this code, not a return to the manuscript's original number.
+
+## References
+
+[L1] Corsello SM, Nagari RT, Spangler RD, et al. Discovering the anti-cancer potential of non-oncology drugs
+by systematic viability profiling. *Nature Cancer* 2020;1(2):235–248. PMID 32613204.
+doi:10.1038/s43018-019-0018-6
+
+[D1] PRISM Repurposing 19Q4 secondary screen (figshare dataset, version 4).
+doi:10.6084/m9.figshare.9393293.v4
+
+[D2] DepMap Public 24Q2 (figshare dataset, version 1). doi:10.25452/figshare.plus.25880521.v1

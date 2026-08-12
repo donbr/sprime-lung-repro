@@ -16,7 +16,7 @@ companion manuscript (in review) asked for, and that this code does not carry ou
 | Line-centring / general-sensitivity control | yes |
 | Per-compound bootstrap CI gate | yes |
 | Literature-blind concordance engine | yes (engine only; reference set incomplete) |
-| DEMETER2 RNAi cross-check | yes (needs the optional input) |
+| DEMETER2 RNAi cross-check | yes (output committed; regenerating needs the optional input) |
 | Curve fit-quality / minimum-E_max gate | no |
 | EC₅₀ censoring at the tested dose range | no |
 | Copy-number (deep deletion) genotype calls | no |
@@ -62,7 +62,8 @@ output, not measurement.
 
 Genotype calls, as described in `method.md`, come from the damaging-mutation matrix alone. That matrix
 cannot see a deep deletion — a gene lost entirely, with no point mutation to call. CDKN2A in particular is
-inactivated in lung cancer predominantly by homozygous deletion rather than by point mutation, so cell lines
+inactivated in lung cancer predominantly by homozygous deletion rather than by point mutation (TCGA Research
+Network 2012, PMID 22960745 [L6]), so cell lines
 carrying a CDKN2A deep deletion are scored wild type by this pipeline's genotype-calling logic, quietly
 contaminating the wild-type cohort with lines that are functionally CDKN2A-null. That contamination biases
 ΔpS′ toward zero for the CDKN2A arm — a real mutant-selective effect would be diluted by wild-type-labeled
@@ -104,6 +105,19 @@ and this repository does not test it. Every analysis here is a single-gene, two-
 wild type versus mutant, repeated independently across PTEN, CDKN2A, RB1, and TP53. Nothing here fits a
 model in which two or more genotypes jointly predict response.
 
+## The DEMETER2 cross-check's real caveats
+
+`results/demeter_validation.csv` is committed, and its RB–E2F/CDK4-6 result is now a checkable, obtained
+finding rather than an unverifiable one (see [evidence.md](evidence.md) and [verifying.md](verifying.md)) —
+the missing artifact is no longer the honest caveat here. Two narrower ones remain. RB1's own RNAi result
+rests on a mutant cohort of only 6 cell lines, smaller than any of the four PRISM cohorts in `method.md`'s
+cohort table and the same kind of small-cohort fragility PTEN's 3-line mutant pool carries in the
+drug-response analysis — a result resting on 6 lines should be read as suggestive, not as backed by a broad,
+well-powered cohort. And PTEN itself is entirely absent from that CSV: its DEMETER2-covered mutant cohort
+falls below the `--min-lines` floor of 5 that `demeter_validation.py` applies uniformly to every target, so
+no PTEN target can be assessed by RNAi at all under this cross-check. That is a coverage gap in this
+analysis, not evidence that PTEN dependencies do not exist.
+
 ## The concordance reference set is incomplete
 
 `concordance/reference_seed_grounded.csv` holds 7 rows: 5 for RB1, 1 for PTEN, 1 for TP53, and none for
@@ -139,3 +153,8 @@ then reads — see `CONNECTORS.md` for how that boundary is kept. This is what m
 reproducible and safe to run in CI. The cost is that curation — including the incomplete provenance
 described above — is a manual step that happens outside the pipeline and is not itself verified by any
 script in this repository.
+
+## References
+
+[L6] The Cancer Genome Atlas Research Network. Comprehensive genomic characterization of squamous cell lung
+cancers. *Nature* 2012;489(7417):519–525. PMID 22960745. doi:10.1038/nature11404
