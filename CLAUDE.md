@@ -11,6 +11,48 @@ bootstrap CI gate, and a literature-blind concordance benchmark. The honest head
 that they mostly do **not** — only RB1 rises marginally above the null. Do not "improve" results by
 loosening a gate; the null result is the finding.
 
+## Relationship to the referee review
+
+This code is the evidence apparatus for a referee review of manuscript V4 (an external document, not in
+this repo). Almost every script exists to substantiate one numbered issue in that review, and the committed
+CSVs in `results/` are the exact numbers quoted in it. That is why the summary CSVs are committed at all —
+treat them as cited figures, not as scratch output, and regenerate the whole chain rather than one stage if
+they must change.
+
+| Review issue | What it demands | Implementation | Committed result |
+|---|---|---|---|
+| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0013, TP53 p=5.6e-08, PTEN p=0.30, CDKN2A untestable |
+| B2 no null model | candidate sizes, permutation FDR, bootstrap gate | `blocking_analyses.py` §1, `bootstrap_ci_gate.py` | 97/48/94/16; FDR 1.00/0.87/0.68/1.27; survivors 26/3/16/1 |
+| B3 sensitivity confound | per-line median S′ split by genotype | `blocking_analyses.py` §2 | offsets −0.02 to −0.13, corr 0.996–1.000 |
+| B4 worked example wrong | recompute to S′ ≈ 6.70 | `sprime_pipeline.py` anchor, `test_sprime_worked_example` | 6.704 |
+| M3 fold-change claim | ΔpS′ ≤ −2 *is* ≈7.4-fold | `sprime_core.fold_change`, `test_fold_change_converges` | e² = 7.389 |
+| M9 RNAi reframing | emit two-sided + WT-direction q-values | `demeter_validation.py` | added in `01425ea` |
+
+The manuscript's Supplement 1 claimed S′ = 7.382508; the review showed that arithmetic is wrong and
+self-inconsistent. `test_sprime_worked_example` (`abs(s - 6.70) < 0.05`) is that correction frozen as a
+regression test — the one test whose failure would mean the manuscript was right and this code is wrong.
+
+### Review items with no implementation here
+
+Do not assume a control exists because the review asks for it:
+
+- **M1 fit-quality / minimum-|E_max| gate — the significant gap.** Flat curves make EC₅₀ unidentifiable
+  while |S′| explodes, which is the likely source of the non-credible hits (aspirin, ranitidine). The
+  review states explicitly that **the bootstrap CI gate does not substitute** — aspirin and MK-2206 survive
+  it because their artifactual S′ is stable, not noisy. Such a filter would have to run *before*
+  `sprime_core.sprime` is called in `sprime_pipeline.py`.
+- **M2** EC₅₀ censoring at the tested dose range (8 steps, 4-fold from 10 µM, to ≈0.61 nM).
+- **M6** copy-number loss — genotype calls read the damaging-mutation matrix only, which is precisely why
+  the CDKN2A arm is weakest (predominantly homozygous deletion). `CRISPRGeneDependency.csv` is noted in
+  `DOWNLOAD_CHECKLIST.md` but deliberately not wired into any script.
+- **M4** clustering on `(pS′_WT, pS′_MUT)` instead of the shared-term embedding; **M5** Benjamini–Hochberg
+  for the main significance analysis (`bh_fdr` exists, but only inside `demeter_validation.py`);
+  **M8** an RB1 × TP53 interaction term.
+
+`concordance/reference_seed_grounded.csv` also has a provenance hole: 5 of its 7 rows carry neither PMID nor
+DOI, and `search_terms` is empty on all 7, though the protocol makes both mandatory. B1's remedy rests on
+documented blind assembly, so those fields are load-bearing, not bookkeeping.
+
 ## Commands
 
 Commands below use `python` as the docs do; on this machine only `python3` is on PATH (numpy/pandas are
