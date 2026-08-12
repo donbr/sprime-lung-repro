@@ -82,7 +82,7 @@ and ΔpS′ — this removes any per-line baseline shift and leaves only compoun
 | TP53 | -0.13 | 16 | 3 | 0.996 |
 
 There are two findings here, and both matter, in opposite directions. First, the gross confound this control
-was designed to catch is absent: cohort offsets are small (all within about a tenth of an S′ unit) and ΔpS′
+was designed to catch is absent: cohort offsets are small (all within an eighth of an S′ unit) and ΔpS′
 is nearly invariant to centring — the correlation column, which compares raw ΔpS′ to line-centred ΔpS′ across
 compounds, sits at 0.995 or higher for every gene. This counts in the method's favor. Second, and separately,
 centring still removes the large majority of candidates for every gene, because centring pushes pooled pS′
@@ -98,11 +98,11 @@ raw and centred ΔpS′.
 ## Control 3 — the bootstrap CI gate
 
 This control layers three successively stricter gates on top of the raw candidate count: the point-estimate
-gate already in the SL window (ΔpS′ ≤ −2, the rule set by the companion manuscript, in review), a gate requiring the bootstrap 95%
-confidence interval's upper bound to fall below 0 (selectivity distinguishable from zero, not merely a point
-estimate that happens to land past threshold), and the strictest gate, requiring the *entire* confidence
-interval to sit at or past −2 (the whole plausible range of the estimate clears the effect-size bar, not just
-its center).
+gate already in the SL window — ΔpS′ ≤ −2, the rule of the companion manuscript (in review) — a gate requiring
+the bootstrap 95% confidence interval's upper bound to fall below 0 (selectivity distinguishable from zero,
+not merely a point estimate that happens to land past threshold), and the strictest gate, requiring the
+*entire* confidence interval to sit at or past −2 (the whole plausible range of the estimate clears the
+effect-size bar, not just its center).
 
 | gene | point ≤ −2 | + CI < 0 | + CI ≤ −2 |
 |---|---|---|---|
@@ -167,23 +167,25 @@ flowchart TD
     I --> J["survive centring<br/>PTEN 3 · CDKN2A 6 · RB1 5 · TP53 3"]
 ```
 
+### Circular — what the manuscript did
+
 ```mermaid
-flowchart LR
-    subgraph circular["Circular — what the manuscript did"]
-        direction TB
-        S1["S' analysis"] --> R1["compounds ranked by delta-pS'"]
-        R1 --> REF1["reference set assembled<br/>from the top-ranked compounds"]
-        REF1 --> T1["test: how many does<br/>the window recover?"]
-        T1 --> O1["75 of 75, i.e. 100%<br/>carries no information"]
-        O1 -.->|"the window built the very set<br/>it is being scored against"| REF1
-    end
-    subgraph blind["Blind — the protocol in concordance/"]
-        direction TB
-        LIT["literature search:<br/>databases, terms, dates recorded"] --> REF2["reference set frozen<br/>with a timestamp"]
-        REF2 --> SEEN["only now is delta-pS' consulted"]
-        SEEN --> T2["recovery + misses + enrichment p"]
-        T2 --> O2["a falsifiable result"]
-    end
+flowchart TD
+    S1["S' analysis"] --> R1["compounds ranked by delta-pS'"]
+    R1 --> REF1["reference set assembled<br/>from the top-ranked compounds"]
+    REF1 --> T1["test: how many does<br/>the window recover?"]
+    T1 --> O1["75 of 75, i.e. 100%<br/>carries no information"]
+    O1 -.->|"the window built the very set<br/>it is being scored against"| REF1
+```
+
+### Blind — the protocol in concordance/
+
+```mermaid
+flowchart TD
+    LIT["literature search:<br/>databases, terms, dates recorded"] --> REF2["reference set frozen<br/>with a timestamp"]
+    REF2 --> SEEN["only now is delta-pS' consulted"]
+    SEEN --> T2["recovery + misses + enrichment p"]
+    T2 --> O2["a falsifiable result"]
 ```
 
 ## Cross-check — DEMETER2 RNAi
