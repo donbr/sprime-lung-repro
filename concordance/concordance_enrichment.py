@@ -14,7 +14,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from _common import safe_stdout
 from sprime_core import MIN_LINES, passes_window
-from scipy.stats import hypergeom
+try:
+    from scipy.stats import hypergeom
+except ImportError:
+    print("ERROR: scipy is required (scipy.stats.hypergeom) but is not installed.\n"
+          "  Install it with:  pip install scipy   (or: uv sync)")
+    sys.exit(4)
 safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
