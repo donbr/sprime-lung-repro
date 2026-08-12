@@ -52,7 +52,7 @@ themselves are correct, only that the prose in `docs/` has not drifted from what
 currently committed. Tier 1 below is what establishes that the CSVs are correct in the first
 place.
 
-Seven results artifacts are committed to this repository specifically so a reader can open them
+Eight results artifacts are committed to this repository specifically so a reader can open them
 without running anything at all:
 
 | File | What it holds |
@@ -64,16 +64,21 @@ without running anything at all:
 | `results/lung_genotypes.csv` | the called genotype (0/1/2) for all four genes, all 94 lung lines |
 | `results/blocking_summary.txt` | a human-readable rendering of the first two controls |
 | `concordance/results/concordance_report.csv` | per-gene reference-in-universe, recovered, and enrichment p |
+| `results/demeter_validation.csv` | per-target DEMETER2 RNAi cross-check: ΔpD, direction, one- and two-sided FDR-corrected q |
 
 Opening these is Tier 0 too — no code needs to run for a reader to see the numbers `evidence.md`
 quotes from them; `test_docs_numbers.py` is what makes that quoting checkable by machine rather
 than by eye.
 
-## Tier 1 — full reproduction from public inputs (~560 MB, deterministic)
+## Tier 1 — full reproduction from public inputs (~560 MB, deterministic under pinned dependencies)
 
-*Everything in this tier is described from the code, not executed for this document — the
-gated ~560 MB PRISM/DepMap/DEMETER2 inputs are not present in this environment. The command
-lines below are taken directly from each script's `argparse` definition; none are invented.*
+This tier has been run start to finish at least once: all three inputs fetched and md5-verified against
+the pins, `run_all.py` completed, and `concordance_enrichment.py` and `demeter_validation.py` run
+separately afterward. Six of the seven artifacts committed at that time reproduced byte-identical —
+every candidate count, every permutation p-value, every FDR, and every bootstrap survivor count,
+including `concordance/results/concordance_report.csv`'s permutation p-values. The one exception, and
+exactly what it does and does not mean for the guarantee below, is described under "Determinism by
+construction."
 
 ```bash
 pip install -r requirements.txt
@@ -87,6 +92,13 @@ Optionally, after `run_all.py`:
 python3 concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv
 python3 demeter_validation.py                                    # needs the optional DEMETER2 input
 ```
+
+`demeter_validation.py` is the most expensive analysis in this repository to reproduce. It needs both the
+optional ~161 MB DEMETER2 input (`fetch_data.py --only demeter2_rnai`) and a rebuilt
+`results/sprime_lung_pairs.csv` from step 1 above — that intermediate table is gitignored as too large to
+commit, so it must come from a completed `run_all.py` run rather than from the committed `results/*.csv`
+files alone. `results/demeter_validation.csv` itself, its output, is committed, so Tier 0 above already
+lets a reader check its figures without paying either of those costs.
 
 Three guarantees make re-running this tier meaningful rather than merely time-consuming:
 
@@ -102,13 +114,29 @@ the pinned DepMap 24Q2 release nor the (separately pinned) 24Q4 release — so a
 release cannot substitute itself even if a reviewer's `data_sources/` already has a differently
 named or differently sourced file.
 
-**Determinism by construction.** All three RNG-using scripts (`blocking_analyses.py`,
-`bootstrap_ci_gate.py`, `concordance/concordance_enrichment.py`) default `--seed` to `20260811`.
-Every sort in `sprime_pipeline.py` that determines row order or duplicate resolution uses
-`kind="stable"` explicitly, and derived tables are written in a canonical sort order before every
-write — this is what makes byte-identical output possible across machines and Python versions
-rather than merely "the same numbers in some order." A reviewer who reruns Tier 1 and gets
-different numbers has therefore found a real discrepancy worth reporting, not sampling noise.
+**Determinism by construction, under the pinned dependency versions.** All three RNG-using scripts
+(`blocking_analyses.py`, `bootstrap_ci_gate.py`, `concordance/concordance_enrichment.py`) default `--seed`
+to `20260811`. Every sort in `sprime_pipeline.py` that determines row order or duplicate resolution uses
+`kind="stable"` explicitly, and derived tables are written in a canonical sort order before every write.
+Under `requirements.txt`'s pinned numpy 2.1.3 / pandas 2.2.3 / scipy 1.14.1, this is what makes every
+committed artifact byte-identical, not merely "the same numbers in some order."
+
+Under a *newer*, unpinned numpy the guarantee has actually been put to the test, not merely asserted: a
+full Tier 1 run against numpy 2.2.6 / pandas 2.3.3 / scipy 1.15.3 reproduced six of the seven
+then-committed artifacts byte-identical — every candidate count, every permutation p-value, every FDR,
+and every bootstrap survivor count, including `concordance/results/concordance_report.csv`'s permutation
+p-values, which exercise the `sorted(universe)` fix for Python's per-process string-hash randomisation.
+The one exception is `results/line_centring.csv`'s `corr_dps` column, which differed in the last one or
+two digits (CDKN2A `...39013` vs `...39008`; RB1 `...15146` vs `...15147`). That difference was
+diagnosed, not assumed: it reproduced identically across three separate runs on one machine, was
+unaffected by forcing `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1` and `MKL_NUM_THREADS=1`, and traces
+to `np.corrcoef` (`blocking_analyses.py:78`) computing through BLAS, whose summation order varies between
+library builds — not to any non-determinism in this repository's own code.
+`results/blocking_summary.txt`, which prints that column to three decimals, was byte-identical even
+under the newer numpy: the difference sits far below any displayed precision. A reviewer who reruns
+Tier 1 under the pinned versions and gets different numbers, or who reruns it under any numpy and finds
+a difference beyond the last couple of digits of `corr_dps`, has found a real discrepancy worth
+reporting, not sampling noise or an artifact of this note.
 
 **Loud, not silent, failure.** `run_all.py` propagates `sprime_pipeline.py`'s exit code and
 stops before running the downstream controls on a bad build; a step-2 or step-3 failure is
@@ -121,10 +149,11 @@ Checkpoints to watch for while Tier 1 runs:
   hand-entered inputs.
 - Step 1 prints the per-gene cohort sizes (`WT=`, `mut=`) against the Supplement 9 comparison —
   see the cohort table in [method.md](method.md#calling-genotypes).
-- The regenerated `results/*.csv` files should be byte-identical to the committed copies (where a
-  committed copy exists — `results/sprime_lung_pairs.csv` itself is gitignored as too large to
-  commit, per `.gitignore`). `diff` or `git diff --stat` against the committed CSVs is the direct
-  check.
+- The regenerated `results/*.csv` files should be byte-identical to the committed copies under the
+  pinned dependency versions (where a committed copy exists — `results/sprime_lung_pairs.csv` itself
+  is gitignored as too large to commit, per `.gitignore`). `diff` or `git diff --stat` against the
+  committed CSVs is the direct check; expect it to come back empty except possibly the last one or two
+  digits of `line_centring.csv`'s `corr_dps` column, if your environment's numpy differs from the pin.
 
 ## What each command substantiates
 
@@ -134,9 +163,12 @@ Checkpoints to watch for while Tier 1 runs:
 | Candidates sit at the permutation null (RB1 marginal) | — | `run_all.py` -> `candidate_null.csv` | reproducible finding |
 | No gross general-sensitivity confound | — | `run_all.py` -> `line_centring.csv` | reproducible finding |
 | Lists thin sharply under bootstrap CI | — | `run_all.py` -> `bootstrap_ci_summary.csv` | reproducible finding |
-| RB1 loss -> Aurora dependency, recovered beyond chance | Gong 2019 [L3], Oser 2019 [L4] | p = 0.0013 | **both legs — strongest claim here** |
-| TP53 -> KIF11 enrichment | **none** | p = 5.6e-08, one seed row | computation only |
-| CDK4/6 WT-selective under RB1 loss | Michaud 2010 [L5] | *not committed*, needs DEMETER2 | prior art only, not an obtained result |
+| RB1 loss -> Aurora dependency, recovered beyond chance (drug response) | Gong 2019 [L3], Oser 2019 [L4] | p = 0.0013 | **both legs — strongest claim here** |
+| TP53 -> KIF11 enrichment (drug response) | **none** | p = 5.6e-08, one seed row | computation only |
+| CDK4/6 WT-selective under RB1 loss (RNAi) | Michaud 2010 [L5] | q_two = 0.0081, `results/demeter_validation.csv` | **both legs** — prior art and a committed, obtained result |
+| RB–E2F axis + AKT1 mutant-selective under RB1 loss (RNAi) | — | q_two = 0.0081-0.0493, `results/demeter_validation.csv` | reproducible finding |
+| AURKA/AURKB dependency under RB1 loss (RNAi) | — | q_two = 0.5487 / 0.7789, not significant | tested, not supported by RNAi (Aurora's evidence is the drug-response row above) |
+| TP53 -> KIF11 dependency (RNAi) | — | q_two = 0.1159, not significant | tested, borderline — directionally consistent with the drug-response row above, not confirmatory |
 | CDKN2A inactivated mainly by deletion | TCGA 2012 [L6] | — | prior art only; motivates gap in [scope.md](scope.md) |
 | 4PL pathology percentages (36% / 36% / 3% / 49%) | manuscript's own audit | — | attributed, not computed, not checkable here |
 
@@ -145,14 +177,8 @@ of [method.md](method.md) and [evidence.md](evidence.md); this table does not re
 
 ## What cannot be verified
 
-Three things, stated plainly rather than left implicit:
+Two things, stated plainly rather than left implicit:
 
-- **The DEMETER2 cross-check's outcome.** `demeter_validation.py` needs the optional DEMETER2
-  input, which is not among this repository's committed or CI-fetched files, and it writes to
-  `results/demeter_validation.csv`, which is not committed either. No reader can confirm from
-  this repository alone which way the CDK4/6-under-RB1-loss contrast actually came out on a given
-  run — only that the script is constructed to test it, in both directions, exactly as
-  `evidence.md`'s Cross-check section describes.
 - **The 4PL pathology percentages.** The 36% / 36% / 3% / 49% figures quoted in
   [method.md](method.md#why-the-standard-summaries-fail) are the companion manuscript's own audit
   of its 4PL fits. This repository does not compute them, does not have the code that produced
