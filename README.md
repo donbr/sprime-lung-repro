@@ -72,3 +72,9 @@ Code is released under the MIT License (`LICENSE`). Mint a Zenodo DOI on a tagge
 
 CI runs a synthetic-data smoke test only (the real 400 MB inputs cannot live in CI); see
 `.github/workflows/smoke.yml`.
+
+## Documentation
+`docs/` explains the analysis for a reader arriving cold: [`docs/method.md`](docs/method.md) for the S′
+metric and genotype calling, [`docs/evidence.md`](docs/evidence.md) for the four statistical controls and
+what each established, and [`docs/scope.md`](docs/scope.md) for the analyses this repository deliberately
+does not perform. Start at [`docs/README.md`](docs/README.md).
