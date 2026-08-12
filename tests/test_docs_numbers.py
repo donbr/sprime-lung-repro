@@ -11,6 +11,9 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+sys.path.insert(0, ROOT)
+from _common import safe_stdout
+safe_stdout()
 
 GENES = ["PTEN", "CDKN2A", "RB1", "TP53"]
 
