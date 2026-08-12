@@ -51,6 +51,49 @@ def test_method_states_line_count():
                "results/lung_genotypes.csv row count")
 
 
+def test_evidence_permutation_null_table():
+    """The permutation-null row for each genotype must match candidate_null.csv."""
+    df = _read("results/candidate_null.csv")
+    doc = _doc("evidence.md")
+    for r in df.itertuples():
+        row = (f"| {r.gene} | {int(r.candidates)} | {r.null_mean:.1f} | "
+               f"{r.emp_p:.3f} | {r.perm_fdr:.2f} |")
+        _assert_in(doc, row, "evidence.md", "results/candidate_null.csv")
+
+
+def test_evidence_line_centring_table():
+    """The line-centring row for each genotype must match line_centring.csv."""
+    df = _read("results/line_centring.csv")
+    doc = _doc("evidence.md")
+    for r in df.itertuples():
+        row = (f"| {r.gene} | {r.offset_mut_minus_wt:+.2f} | {int(r.raw)} | "
+               f"{int(r.centred)} | {r.corr_dps:.3f} |")
+        _assert_in(doc, row, "evidence.md", "results/line_centring.csv")
+
+
+def test_evidence_bootstrap_table():
+    """The bootstrap survivor row for each genotype must match the summary CSV."""
+    df = _read("results/bootstrap_ci_summary.csv")
+    doc = _doc("evidence.md")
+    for r in df.itertuples():
+        row = (f"| {r.gene} | {int(r.point)} | {int(r.ci_excl0)} | "
+               f"{int(r.ci_le_minus2)} |")
+        _assert_in(doc, row, "evidence.md", "results/bootstrap_ci_summary.csv")
+
+
+def test_evidence_concordance_table():
+    """Concordance rows must match; genotypes with an empty reference are skipped."""
+    df = _read("concordance/results/concordance_report.csv")
+    doc = _doc("evidence.md")
+    for r in df.itertuples():
+        if int(r.ref_in_universe) == 0:
+            continue
+        row = (f"| {r.gene} | {int(r.ref_in_universe)} | {int(r.recovered)} | "
+               f"{r.hyperg_p:.2g} |")
+        _assert_in(doc, row, "evidence.md",
+                   "concordance/results/concordance_report.csv")
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):
