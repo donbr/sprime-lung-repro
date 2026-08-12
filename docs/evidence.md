@@ -184,12 +184,20 @@ is absent from the table above. The result against this starter set should be re
 protocol rather than as a finished, comprehensive benchmark — the starter set itself is a first pass, not a
 systematic literature review, and its own provenance gaps are documented in [scope.md](scope.md).
 
-With that caveat, the honest reading is this: RB1 and TP53 recover specific, well-established biology at
-well beyond what chance overlap would predict (p = 0.0013 and p = 5.6×10⁻⁸ respectively — TP53's on the
-strength of a single target, as above), even though their
-overall candidate lists sit near the permutation null in Control 1. Put together, the SL window recovers real
-pharmacology for at least these two genes without behaving as a general-purpose, genome-wide selective
-classifier — the two results are not in tension, they describe different things.
+With that caveat, RB1 and TP53 stand on different footing, and the difference matters more than the two
+p-values' similar magnitude suggests. RB1's recovery is corroborated by independent literature: Aurora A
+inhibition (Gong et al. 2019, PMID 30373917) and Aurora B dependency (Oser et al. 2019, PMID 30373918) are
+each independently established as RB1-loss-selective vulnerabilities in RB1-deficient models, so RB1's
+p = 0.0013 enrichment here is a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
+equally real and reproducible — it is not a fluke of this dataset — but it has no independent literature
+support: no PubMed-indexed study demonstrates TP53-mutant-selective sensitivity to KIF11/Eg5 inhibitors,
+KIF11 is broadly common-essential rather than genotype-selective (`CONNECTORS.md`, and the seed row's own
+`inclusion_rationale` in `reference_seed_grounded.csv` reads "common-essential"), and the p-value traces to a
+single seed row (target KIF11, compound ispinesib), as above. TP53's enrichment is therefore an internal
+empirical finding of this dataset, not corroboration of known biology — real and worth investigating further,
+but not evidence that TP53-selective KIF11 dependence is an established phenomenon. Put together, the SL
+window recovers literature-corroborated pharmacology for RB1 and a reproducible-but-uncorroborated enrichment
+for TP53, without behaving as a general-purpose, genome-wide selective classifier for either.
 
 ```mermaid
 flowchart TD
@@ -270,10 +278,15 @@ approaches significance under the permutation null, and only marginally. The gen
 that line-centring was built to catch is genuinely absent, which is real evidence in the method's favor. The
 lists nonetheless depend heavily on the metric's absolute-scale anchoring, thinning sharply once cell lines
 are centred or once a bootstrap confidence interval is required to clear the effect-size threshold as a whole
-rather than just at its point estimate. And specific, well-established biology is recovered well beyond chance
-for RB1 and TP53 under an independent literature benchmark — TP53's on a single target — with an orthogonal
-RNAi cross-check *available* to test the RB1 direction in both directions at once, though its result is not
-committed here and this document therefore claims nothing about it. That combination — a near-null result at the level of the whole candidate
-list, alongside real recovery of specific known biology — supports a narrow claim about this method, not a
-broad one: it is not evidence of a general-purpose genome-wide selective-vulnerability classifier, but it is
-evidence that the window can and does recover real, specific pharmacology for at least some genotypes.
+rather than just at its point estimate. RB1's recovery under the literature-blind benchmark is corroborated
+by independent literature (Gong et al. 2019, PMID 30373917; Oser et al. 2019, PMID 30373918); TP53 shows an
+equally strong enrichment in this same benchmark (p = 5.6×10⁻⁸) that is real and reproducible but has no
+independent literature support and so should be read as an internal empirical finding of this dataset rather
+than corroboration of known biology. An orthogonal RNAi cross-check is *available* to test the RB1 direction
+in both directions at once, though its result is not committed here and this document therefore claims
+nothing about it. That combination — a near-null result at the level of the whole candidate list, alongside
+literature-corroborated recovery for RB1 and a reproducible-but-uncorroborated enrichment for TP53 — supports
+a narrow claim about this method, not a broad one: it is not evidence of a general-purpose genome-wide
+selective-vulnerability classifier, but it is evidence that the window can and does recover real pharmacology
+for RB1, backed by independent literature, and a real, reproducible internal signal for TP53 whose biological
+meaning is not yet independently established.

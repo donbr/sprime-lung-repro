@@ -3,9 +3,10 @@
 This repository computes the S′ drug-response metric on public PRISM and DepMap data for 94 lung cancer
 cell lines, calls tumor-suppressor genotypes for four genes, and runs the statistical controls needed to
 decide whether the resulting candidate lists mean anything. The short answer is that they largely do not —
-only RB1 rises above a label-permutation null, and then only marginally — while specific, well-established
-biology is still recovered beyond chance for RB1 and TP53. Everything here is deterministic and
-checksum-guarded.
+only RB1 rises above a label-permutation null, and then only marginally — while RB1's recovery of
+Aurora-kinase biology is independently corroborated in the literature and TP53 shows an equally strong but
+as-yet-uncorroborated enrichment, both beyond chance under this repository's own literature-blind benchmark
+(see [evidence.md](evidence.md)). Everything here is deterministic and checksum-guarded.
 
 ## Reading paths
 
@@ -56,3 +57,9 @@ Every computed figure in these documents is checked against the committed CSVs b
 the prose is updated to match. Numbers this repository does not compute — the 4PL pathology percentages and
 the PRISM assay design — are attributed inline to their source instead. The companion manuscript (in
 review) is not reproduced here.
+
+## Citations
+
+Claims resting on independent literature, rather than on this repository's own computation, are cited
+inline where they are made, with full records in a `## References` section at the foot of `method.md`,
+`evidence.md`, and `scope.md`.

@@ -33,12 +33,19 @@ Reference targets expanded to all PRISM compounds annotated to them, restricted 
 | CDKN2A | 0 | 48 | 1402 | 0 | n/a | — | — |
 
 **What this already shows** (and why it is more defensible than the circular 100%):
-- **RB1 (Aurora/PLK targets) and TP53 (KIF11) are enriched beyond chance** (p ≈ 0.001 and 6e-8) — a real,
-  falsifiable signal for specific well-established SL targets, even though the *overall* candidate lists sit
-  near the permutation null (see `../results/candidate_null.csv` and the headline table in `../README.md`).
-  The honest read: the window
-  recovers specific known biology (Aurora/PLK in RB1-loss, KIF11 in TP53-mutant) while not being a
-  genome-wide selective classifier.
+- **RB1 (Aurora/PLK targets) is enriched beyond chance** (p ≈ 0.001) — a real, falsifiable signal, and one
+  corroborated by independent literature on Aurora-kinase synthetic lethality with RB1 loss (see
+  `docs/evidence.md` for the citations), even though the *overall* candidate lists sit near the permutation
+  null (see `../results/candidate_null.csv` and the headline table in `../README.md`).
+- **TP53 (KIF11) is also enriched beyond chance** (p ≈ 6e-8), and the enrichment is real and reproducible —
+  but it has **no independent literature support**: no PubMed-indexed study demonstrates TP53-mutant-selective
+  sensitivity to KIF11/Eg5 inhibitors, and KIF11 is broadly common-essential rather than genotype-selective
+  (see `CONNECTORS.md`, and the `inclusion_rationale` on the KIF11 row of `reference_seed_grounded.csv`
+  itself). TP53's enrichment should therefore be read as an internal empirical finding of this dataset, not
+  as corroboration of known biology.
+  The honest read: the window recovers literature-corroborated biology for RB1 (Aurora/PLK in RB1-loss) and a
+  reproducible but as-yet-uncorroborated enrichment for TP53 (KIF11), while not being a genome-wide selective
+  classifier either way.
 - **PTEN concordance is not supported** by the blind test (p = 0.30) — do not claim it as validation.
 - **CDKN2A cannot be benchmarked** from the starter set (no entries) — add CDKN2A literature or report that
   its selective-SL evidence is too limited to test.
