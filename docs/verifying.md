@@ -218,17 +218,33 @@ only Tier 1.
    pipeline. Because the permutation seed is fixed and every sort is stable, a correct rerun
    against the same pinned inputs should reproduce this row exactly, not merely approximately.
 
+## Tier 2 — Interactive Web Dashboard & Automated Playwright UI Verification
+
+This tier provides interactive visual exploration of 4PL dose-response curves ($S'$, $\text{IC}_{50}$, $\text{AUC}$), candidate reduction funnels, DEMETER2 RNAi targets, primitive feature hierarchies, and presentation slides:
+
+```bash
+cd dashboard
+npm install
+npm run dev                  # serves on http://localhost:5173/
+node verify_ui.js            # runs automated Playwright E2E UI & numerical accuracy tests
+```
+
+`node verify_ui.js` executes headless Playwright browser tests that step through all UI controls, presets, candidate reduction funnels, and DEMETER2 RNAi target rows, verifying numerical readouts against the pipeline CSVs and saving high-resolution full-page screenshots into the artifacts directory.
+
 ## Which tier answers which question
 
 ```mermaid
 flowchart TD
     Q["What do you want to establish?"] --> Q1["Is the S' formula and\nSL-window logic implemented\nas specified?"]
     Q --> Q2["Do the docs' figures match\nwhat is actually committed?"]
-    Q --> Q3["Are the headline findings\nreproducible from the public data?"]
+    Q --> Q3["Are the headline findings\nreproducible from public data?"]
+    Q --> Q4["Can I interactively simulate\ncurves, funnels & slides in UI?"]
     Q1 --> T0A["Tier 0:\npython3 tests/test_synthetic.py"]
     Q2 --> T0B["Tier 0:\npython3 tests/test_docs_numbers.py"]
     Q3 --> T1["Tier 1:\nfetch_data.py, then run_all.py"]
+    Q4 --> T2["Tier 2:\ncd dashboard && npm run dev\nnode verify_ui.js"]
     T0A --> A0["proves: the math and window\nlogic match hand-checked values"]
     T0B --> B0["proves: prose matches\ncommitted CSVs, not that the\nCSVs themselves are correct"]
     T1 --> A1["proves: the committed CSVs\nthemselves rebuild byte-identically\nfrom version-pinned public inputs"]
+    T2 --> A2["proves: UI controls, curve formulas\n& candidate funnels function accurately"]
 ```

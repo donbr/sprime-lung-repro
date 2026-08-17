@@ -65,11 +65,23 @@ sprime-lung-repro/
 ├── bootstrap_ci_gate.py     # per-compound bootstrap CI gate
 ├── demeter_validation.py    # DEMETER2 RNAi genetic-dependency validation (needs the DEMETER2 file)
 ├── concordance/             # literature-blind concordance benchmark scaffold (protocol + engine)
+├── dashboard/               # interactive React + Vite web dashboard & Playwright UI verification
 ├── CONNECTORS.md            # how the bio-research MCP connectors support the curation steps
 ├── pyproject.toml · uv.lock # uv dependency declaration + hashed lock (source of truth)
 ├── requirements.txt         # generated from uv.lock (uv export) — for pip/conda workflows
 ├── run_all.py · tests/ · .github/workflows/
 └── data_sources/            # (gitignored) the large public inputs go here
+```
+
+## Interactive Web Dashboard
+
+Launch the local interactive React + Vite dashboard to simulate 4PL curves ($S'$, $\text{IC}_{50}$, $\text{AUC}$), explore candidate reduction funnels, and inspect DEMETER2 RNAi targets:
+
+```bash
+cd dashboard
+npm install
+npm run dev                  # serves locally on http://localhost:5173/
+node verify_ui.js            # executes automated Playwright UI & data accuracy tests
 ```
 
 ## Data & licensing
