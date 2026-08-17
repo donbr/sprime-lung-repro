@@ -21,6 +21,9 @@ as-yet-uncorroborated enrichment, both beyond chance under this repository's own
 - **Check a claim yourself** — [`verifying.md`](verifying.md): which command substantiates which claim, from
   a seconds-long synthetic test up to a full ~560 MB reproduction, and what each command does and does not
   prove.
+- **Explore interactively** — [`dashboard/README.md`](../dashboard/README.md): launch the local React + Vite
+  dashboard (`cd dashboard && npm run dev`) to simulate 4PL curves, candidate funnels, DEMETER2 RNAi targets,
+  and presentation slides, or run Playwright UI tests (`node verify_ui.js`).
 
 ## How the pieces fit
 

@@ -73,6 +73,10 @@ python bootstrap_ci_gate.py [--B 2000] [--seed 20260811]
 python demeter_validation.py [--genes AURKB PLK1 ...] [--reference concordance/reference_seed_grounded.csv]
 python concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv
 
+# web dashboard & automated browser verification
+cd dashboard && npm install && npm run dev            # local web app on http://localhost:5173/
+cd dashboard && node verify_ui.js                     # automated Playwright E2E UI & data tests
+
 # tests — plain asserts, no pytest in requirements.txt; runs without the gated data
 python tests/test_synthetic.py                        # what CI runs; prints "ALL PASSED"
 python -m pytest tests/test_synthetic.py::test_sprime_sign     # single test, if pytest is installed
