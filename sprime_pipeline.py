@@ -23,7 +23,8 @@ MD5 = {
     "mut_24q4":   "cb20fdbe1cf3b9b0d8ed4f53e1f399b6",   # DepMap 24Q4 (identical calls on analyzed genes)
 }
 EXPECTED_COHORTS = {"PTEN": (90, 3), "CDKN2A": (80, 13), "RB1": (84, 8), "TP53": (18, 72)}  # Suppl 9 (WT, mut)
-MIN_LINES = 3
+# (no MIN_LINES here: this module never applies the SL window. sprime_core.py is the single source,
+#  and an unused shadow of a single-sourced constant is exactly what CLAUDE.md forbids reintroducing.)
 
 def md5(path, chunk=1 << 20):
     h = hashlib.md5()

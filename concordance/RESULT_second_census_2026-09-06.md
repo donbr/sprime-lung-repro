@@ -1,69 +1,127 @@
 # Result — second blinded census, 2026-09-06
 
 Executes `PRESPEC_second_census_2026-09-06.md` (committed `343203f`, before this census existed) against
-the census frozen in `38ce6f6` (committed before anything was scored). Nothing below is a decision made
-after seeing a result; the rule was fixed in advance and this document reports what it returned.
+the census frozen in `38ce6f6` (committed before anything was scored). The rule was fixed in advance; this
+document reports what it returned, and what that does and does not establish.
 
-**Verdict: RB1 replicates and is the only claimable genotype. The claim is narrowed to the Aurora kinase
-class, which carries the enrichment in both censuses.**
+**Verdict: RB1 passes the pre-specified gate and is the only claimable genotype. But the second census
+adds far less than a naive reading of the gate suggests, and the Aurora narrowing does not replicate under
+a properly posed test.** Both statements are in this document because both are true.
 
 ---
 
 ## 1. The pre-specified rule, applied
 
-A genotype's claim stands only if it clears chance against **both** censuses independently, hypergeometric
-and permutation p both below 0.05, in each census's primary directional analysis. No pooling. Symmetric.
+A genotype's claim stands only if it clears chance against **both** censuses **separately** (the
+pre-specification's word is "independently", which there means *without pooling* — it does **not** mean the
+two censuses are statistically independent; see §3). No pooling. Symmetric.
 
-| Genotype | 2026-08-31 recovered | p | 2026-09-06 recovered | p | Verdict |
-|---|---|---|---|---|---|
-| PTEN | 2 / 39 | 0.94 | 3 / 71 | 0.99 | concordant negative |
-| CDKN2A | 0 / 12 | 1 | 0 / 15 | 1 | concordant negative |
-| **RB1** | **13 / 94** | **0.0099** | **13 / 73** | **0.00097** | **claimable** |
-| TP53 | 1 / 61 | 0.51 | 0 / 38 | 1 | concordant negative |
+| Genotype | 2026-08-31 | p | Bonferroni ×4 | 2026-09-06 | p | Bonferroni ×4 | Verdict |
+|---|---|---|---|---|---|---|---|
+| PTEN | 2 / 39 | 0.94 | 1 | 3 / 71 | 0.99 | 1 | concordant negative |
+| CDKN2A | 0 / 12 | 1 | 1 | 0 / 15 | 1 | 1 | concordant negative |
+| **RB1** | **13 / 94** | **0.0099** | **0.040** | **13 / 73** | **0.00097** | **0.0039** | **passes the gate** |
+| TP53 | 1 / 61 | 0.51 | 1 | 0 / 38 | 1 | 1 | concordant negative |
 
-Permutation p agrees with the closed form throughout: RB1 gives 0.0091 and 0.0004, the other three sit at
-or near 1. Source: `results/census_comparison.csv`.
+Source: `results/census_comparison.csv`. Permutation p agrees with the closed form throughout, which is
+expected rather than corroborating: the permutation draws a uniform random candidate-sized subset of the
+universe, so it is a 10,000-draw Monte-Carlo estimate **of the same hypergeometric null**, not a second
+line of evidence. Requiring both to clear can only fail on simulation noise.
 
-**Sensitivity analysis**, full censuses with the inverse-direction rows retained (95 and 121 rows). RB1
-holds at 13/85, p = 0.0041. CDKN2A rises to 4/65, p = 0.18, still not clearing. PTEN 10/135, p = 0.95.
-TP53 0/45, p = 1. The reference counts inflate here because the inverse-direction rows are EGFR and IGF1R
-entries that expand to large annotated compound families, which is exactly why the directional exclusion
-exists.
+**Sensitivity analysis**, full censuses with the inverse-direction rows retained. Both arms, because
+quoting one while framing both is how the first draft of this document misled:
 
-## 2. The narrowing step
+| | RB1 | Bonferroni ×4 |
+|---|---|---|
+| 2026-08-31, 95-row census | 13 / 106, p = 0.026 | **0.103 — does not survive correction** |
+| 2026-09-06, 121-row census | 13 / 85, p = 0.0041 | 0.016 |
 
-The pre-specification required that, for any genotype clearing both censuses, the leave-one-class-out be
-repeated and the claim narrowed to the class carrying it in **both** — and that a differing carrying class
-be reported as unstable and not claimed.
+Census 1's sensitivity analysis fails Bonferroni. That is worth stating plainly: the primary directional
+result survives correction at 0.040, and the version retaining the inverse-direction rows does not.
 
-| Census | Full | Removing AURKA + AURKB | Carrying classes |
+## 2. What the second census actually adds — much less than it appears
+
+`results/census_comparison.csv` records the reference nesting, and for RB1 it is decisive:
+
+| | RB1 |
+|---|---|
+| Census 1 resolved reference compounds | 94 |
+| Census 2 resolved reference compounds | 73 |
+| Shared | 73 |
+| Census 2 ⊆ census 1 | **yes** |
+| Compounds unique to census 1 | 21, of which **0** recovered (16 come from SRC alone) |
+| Compounds unique to census 2 | 0 |
+
+**Census 2's RB1 reference set is a strict subset of census 1's.** Both are intersected with the *same*
+fixed 94-compound candidate set, derived from the *same* drug-response data. Under nesting, census 2's
+recovered set is forced to be a subset of census 1's, so equal counts entail identical sets. The earlier
+claim that recovering "exactly the same 13 compounds — set identity, not merely equal counts" was the
+strongest evidence in the exercise was wrong: under nesting those two statements are the same statement,
+and neither is evidence of independent convergence.
+
+The same nesting explains the smaller p-value. The numerator is unchanged at 13, the universe is unchanged
+at 1360, and the candidate set is unchanged at 94. Census 2 obtained p = 0.00097 rather than 0.0099 purely
+by nominating **21 fewer compounds, every one of them a miss**. A smaller denominator of failures is not a
+stronger result. **Quote 0.0099, the census-of-record figure**, and treat 0.00097 as what it is.
+
+It follows that the earlier statement "neither set of census-unique targets contains a recovered compound,
+so the disagreement does not touch the result" was also wrong. The disagreement is the *only* thing that
+differs between the two analyses. Census 2's three unique RB1 targets (CD276, KDM1A, PRMT5) resolve to zero
+tested compounds and are inert; census 1's four unique targets contribute the 21 misses that account
+entirely for the difference in p.
+
+What genuinely replicated for RB1 is therefore narrower than "the result": a second set of curators,
+working blind, again nominated the Aurora, PARP and IAP targets that the window recovers. That is roughly
+three or four independent curatorial decisions, not thirteen compound-level replications.
+
+## 3. What is and is not independent between the two censuses
+
+Shared and fixed across both analyses: the drug-response data, the S′ window, the tested universe, the
+candidate set, and the target→compound annotation map. Varying: only which targets the curators nominated.
+The two censuses are therefore strongly dependent by construction. The both-must-clear rule remains a
+**valid conservative gate** — an intersection rule cannot inflate type-I error — but nothing here licenses
+treating the two p-values as independent evidence, and they must never be multiplied.
+
+## 4. The narrowing — and why it does not replicate
+
+The pre-specification required the leave-one-class-out to be repeated and the claim narrowed to the class
+carrying it in both censuses, with a differing carrying class reported as unstable and not claimed.
+
+| Census | Full | Removing AURKA + AURKB | Computed overlap-closed class carrying it |
 |---|---|---|---|
-| 2026-08-31 | 13 / 94, p = 0.0099 | 6 / 69, p = 0.34 | AURKA+AURKB, and AURKA+AURKB+SRC |
-| 2026-09-06 | 13 / 73, p = 0.00097 | 6 / 48, p = 0.11 | AURKA+AURKB |
+| 2026-08-31 | 13 / 94, p = 0.0099 | 6 / 69, p = 0.34 | `AURKA+AURKB+SRC` |
+| 2026-09-06 | 13 / 73, p = 0.00097 | 6 / 48, p = 0.11 | `AURKA+AURKB` |
 
-The intersection is **AURKA+AURKB**. The carrying class is stable, so the claim is made and narrowed:
+**The computed classes differ, and their intersection is empty.** Stability holds only for the
+`AURKA+AURKB` pair, which the pre-specification named explicitly by number in advance, and which the
+generator treats as a curated special case alongside the computed partition. `census_comparison.csv`
+records this as `narrowing_stable = curated-pair-only` rather than as computed stability, because the two
+units disagree. Two further caveats a reader is owed:
 
-> RB1-deficient lung cell lines are selectively sensitive to Aurora kinase inhibitors.
+- The classes differ for a mechanical reason. Census 1 chains SRC into the Aurora class through **one**
+  compound, ENMD-2076, which PRISM annotates to both. Census 2 contains no SRC row, so no chaining occurs.
+  Single-linkage merging on a single annotation is a known fragility of the overlap-closed unit.
+- Removing the Aurora pair in census 1 removes 1 of SRC's 16 compounds, so the curated removal itself
+  partially removes another target's compounds — the very thing the overlap-closed unit exists to prevent.
 
-It is not a broad recovery of RB1 biology. In both censuses, removing the Aurora pair leaves the remainder
-of the reference set at chance. The first census additionally shows SRC chained into the Aurora class by
-promiscuous kinase inhibitors; the second census contains no SRC row, so that chaining does not arise, and
-the Aurora pair alone is carrying in both.
+**Under a better-posed test, the narrowing does not replicate.** "Does this class carry the enrichment"
+is a question about recovery *rate*, not about whether removing the class costs enough sample size to lose
+significance. A one-sided Fisher test of class versus remainder:
 
-## 3. The recovered compounds are identical
+| Census | Aurora | Remainder | Fisher p |
+|---|---|---|---|
+| 2026-08-31 | 7 / 25 | 6 / 69 | **0.024** |
+| 2026-09-06 | 7 / 25 | 6 / 48 | **0.095 — does not clear** |
 
-The two censuses were assembled six days apart by different agents and share only 16 of their roughly 20
-RB1 targets. They nonetheless recover **exactly the same 13 compounds**:
+The Aurora compound set is byte-identical in both censuses (25 compounds, 7 recovered), so this test varies
+only in the remainder. The narrowing is supported in census 1 and inconclusive in census 2.
 
-`AMG900, KW-2449, NVP-BEZ235, SB-218078, SNS-314, ZM-447439, barasertib, barasertib-HQPA, birinapant,
-litronesib, niraparib, olaparib, tozasertib`
+Finally, "removing the Aurora pair leaves the remainder at chance" overstates. The remainder is
+**underpowered, not demonstrably null**: 6/69 = 8.7% (95% CI 4.0–17.7%) and 6/48 = 12.5% (95% CI
+5.9–24.7%) against a base rate of 6.9%. The census-2 remainder still sits at 1.8× the base rate. Absence of
+significance here is absence of evidence.
 
-Set identity, not merely equal counts. This is the strongest single piece of evidence in the exercise: the
-recovered set is a property of the drug-response data and the window, not of which curator assembled the
-reference. What differs between the censuses is the **denominator** — 94 tested compounds versus 73 —
-which is why the recovery rate moves from 14% to 18% and the p-value tightens.
-
-## 4. Agreement between the two censuses
+## 5. Agreement between the two censuses
 
 Required by the pre-specification whatever the enrichment showed. Source: `results/census_agreement.csv`.
 
@@ -74,45 +132,63 @@ Required by the pre-specification whatever the enrichment showed. Source: `resul
 | RB1 | 20 | 19 | 16 | 0.70 | 0.78 |
 | TP53 | 15 | 10 | 7 | 0.39 | 0.50 |
 
-**Agreement is moderate, and that is itself a finding.** Two passes over the same literature, under the
-same written criteria, agree on roughly 40% to 70% of targets. A single census is a noisier instrument
-than its frozen, hashed presentation suggests, and any future benchmark built on one census should say so.
+**Agreement is moderate, and that is a finding.** Two passes over the same literature under the same
+written criteria agree on 39% to 70% of targets. A single census is a noisier instrument than its frozen,
+hashed presentation suggests. Compound-level Jaccard is not a second independent measurement — resolution
+is a deterministic function of the target string and the fixed annotation map — so read it as target
+agreement re-weighted by how many PRISM compounds each target pulls in.
 
-RB1 has the highest target agreement of the four, which is consistent with its being the one genotype with
-a dense, unambiguous primary literature. TP53 has the lowest, which is consistent with the census notes
-from both passes describing the TP53 evidence base as skewed toward DNA-damage-response targets and
-allele-specific effects.
+## 6. What replicated, and what this does not establish
 
-Targets each census found alone, for RB1: only in the first are CCNA2, CCNB1, EZH2 and SRC; only in the
-second are CD276, KDM1A and PRMT5. Neither set contains a recovered compound, so the disagreement does not
-touch the result.
-
-## 5. What replicated, and what this does not establish
-
-**Replicated.** The RB1 positive, at a smaller p-value than the first census. The three negatives, all
-concordant. The identity of the recovered compound set. The Aurora dependence of the enrichment. And,
-independently in both passes, the explicit negative report on TP53: two different agents searching six
-days apart both concluded that no mitotic or spindle-assembly target, KIF11 included, can be evidenced to
-criterion for TP53. The manuscript's TP53–KIF11 finding is therefore an internal empirical result of this
-dataset twice over, and must not be presented as literature-validated.
+**Replicated.** RB1 passes the gate in both censuses. The three negatives are concordant. A second set of
+blind curators again nominated the Aurora, PARP and IAP targets the window recovers. And, in both passes
+independently, the TP53 agent reported that no mitotic or spindle-assembly target, KIF11 included, could be
+evidenced to criterion — though note this is agreement between two searches on an *absence*, for the
+genotype with the lowest target agreement of the four, so it is weak evidence for a strong-sounding
+conclusion. The conservative reading it supports is the one already taken: the TP53–KIF11 signal is an
+internal result of this dataset and must not be presented as literature-validated.
 
 **Not established.** This is not an independent replication. Both censuses were commissioned from a
-results-aware context, and agent isolation was enforced by instruction rather than by a sandbox. What the
-exercise shows is that the result is a property of the literature rather than of one pass through it. A
-genuinely independent replication would be commissioned by someone who has never seen the results, and
-remains the right next step for anyone who wants to close this objection completely.
+results-aware context, and agent isolation was enforced by instruction rather than by a sandbox. Beyond
+that, §2 and §3 show the two censuses share almost everything that determines the answer. What the
+exercise shows is that the *target nomination* is reasonably stable, not that the enrichment has been
+independently reproduced. A genuinely independent replication would be commissioned by someone who has
+never seen the results and remains the right next step.
 
-The remaining limitations from the first census all still apply: the reference sets are pan-cancer while
-recovery is measured in lung lines, PRISM's target annotations are imperfect, and recovery is not a
-sensitivity estimate.
+The first census's limitations all still apply: its freeze commit is retroactive, the reference sets are
+pan-cancer while recovery is measured in lung lines, PRISM's target annotations are imperfect, and recovery
+is not a sensitivity estimate.
 
-## 6. Reproduce
+## 7. Provenance notes
+
+- `census_agreement.py` was committed at `ee365d6`, before the census existed, and then modified in the
+  scoring commit `0fb42f8`. The change was cosmetic — canonical row ordering — and no metric definition
+  changed, but a reviewer auditing "committed before" will see a post-hoc diff and is entitled to know why.
+- The audit chain for census 2 begins at `census_2026-09-06_raw/`, the staged agent output. The two
+  formatting repairs disclosed in `CENSUS_NOTES_2026-09-06.md` were applied upstream of those files, so the
+  raw directory is the earliest artifact a reviewer can re-derive the frozen census from.
+- All eleven commits on this branch are unpushed, unsigned, and authored in one local session by a party
+  who already knew census 1's results. The commit ordering is real and filesystem timestamps corroborate
+  it, but an unpushed local commit is an attestation, not an externally witnessed timestamp.
+
+## 8. Reproduce
 
 ```bash
 uv run --locked python concordance/assemble_census.py
+
+# primary (directional) and sensitivity (full) runs; the engine writes concordance_report.csv,
+# which is renamed to the two names this document cites
 uv run --locked python concordance/concordance_enrichment.py \
     --reference concordance/reference_set_2026-09-06_directional.csv \
     --out concordance/results/2026-09-06_census2 --perm 10000
+mv concordance/results/2026-09-06_census2/concordance_report.csv \
+   concordance/results/2026-09-06_census2/concordance_report_primary_directional.csv
+uv run --locked python concordance/concordance_enrichment.py \
+    --reference concordance/reference_set_2026-09-06.csv \
+    --out /tmp/c2full --perm 10000
+cp /tmp/c2full/concordance_report.csv \
+   concordance/results/2026-09-06_census2/concordance_report_sensitivity_full.csv
+
 uv run --locked python concordance/compare_censuses.py
 uv run --locked python concordance/census_agreement.py
 ```

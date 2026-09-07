@@ -74,7 +74,13 @@ python sprime_pipeline.py [--data DIR] [--mutations FILE] [--skip-checksum]
 python blocking_analyses.py [--perm 2000] [--seed 20260811]
 python bootstrap_ci_gate.py [--B 2000] [--seed 20260811]
 python demeter_validation.py [--genes AURKB PLK1 ...] [--reference concordance/reference_seed_grounded.csv]
-python concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv
+
+# concordance — the benchmark of record is the 2026-08-31 census, NOT reference_seed_grounded.csv
+python concordance/concordance_enrichment.py     --reference concordance/reference_set_2026-08-31_directional.csv     --out concordance/results/2026-08-31_blind --perm 10000
+python concordance/assemble_census.py                      # verbatim assembly of per-agent output
+python concordance/build_suppl7_table1.py --genotype RB1   # self-verifying; fails closed
+python concordance/compare_censuses.py                     # both-must-clear rule + diagnostics
+python concordance/census_agreement.py                     # census-to-census agreement
 
 # web dashboard & automated browser verification
 cd dashboard && npm install && npm run dev            # local web app on http://localhost:5173/
@@ -161,10 +167,13 @@ cohort-size check failed (continue but review), 2 = missing input, 3 = checksum/
 scipy is a required dependency (`pyproject.toml`), not an optional one, so this should only fire on a
 broken environment.
 
-**The docs quote committed results.** `docs/evidence.md`, `docs/method.md`, `README.md`, and
-`concordance/README.md` all reproduce figures from `results/*.csv` and
-`concordance/results/concordance_report.csv` in markdown tables, and `tests/test_docs_numbers.py`
-asserts every one of them matches — it runs in CI. Regenerating the results baseline therefore requires
+**The docs quote committed results.** `docs/evidence.md`, `docs/method.md`, `README.md`,
+`concordance/README.md`, `docs/verifying.md` and **`CLAUDE.md` itself** all reproduce figures from
+`results/*.csv`, `concordance/results/concordance_report.csv`,
+`concordance/results/2026-08-31_blind/*.csv` and `concordance/results/census_comparison.csv` in markdown
+tables, and `tests/test_docs_numbers.py` asserts every one of them matches — it runs in CI. Editing a
+figure in this file without updating its CSV (or the reverse) turns CI red; that has already happened once.
+`docs/scope.md` and `docs/README.md` are **not** under that check. Regenerating the results baseline therefore requires
 updating those tables in the same commit, or the build fails. Numbers the repo does not compute (the 4PL
 pathology percentages, the PRISM dilution scheme) are attributed inline and are not covered by the test.
 
@@ -202,10 +211,12 @@ leaves 6 of 69 recovered at p = 0.34 (`concordance/results/2026-08-31_blind/robu
 2026-09-06 census gives 6 of 48 at p = 0.11. Any claim built on this benchmark must be Aurora-specific;
 §7 of the generated supplement holds the leave-one-class-out, threshold and multiple-testing sweeps.
 
-**A second blinded census was run on 2026-09-06 and RB1 replicated.** The rule was pre-specified in
-`PRESPEC_second_census_2026-09-06.md` and committed before the census existed: a genotype is claimable
-only if it clears chance in **both** censuses. RB1 does, 13/94 at p=0.0099 and 13/73 at p=0.00097, and
-**both censuses recover exactly the same 13 compounds**. PTEN, CDKN2A and TP53 are concordant negatives.
-Census agreement is moderate — Jaccard 0.39 to 0.70 on targets — so a single census is a noisier
-instrument than its frozen presentation suggests. See `RESULT_second_census_2026-09-06.md`. Do not pool
-the two censuses; the pre-specification forbids it.
+**A second blinded census was run on 2026-09-06 and RB1 passes the gate again**, 13/94 at p=0.0099 and
+13/73 at p=0.00097, under a rule pre-specified in `PRESPEC_second_census_2026-09-06.md` and committed
+before the census existed. **Do not over-read it.** Census 2's RB1 reference is a strict subset of census
+1's (73 of 94) and both are scored against the same candidate set, so the identical recovered set is
+arithmetic and the smaller p comes from nominating 21 fewer compounds that were all misses. Quote 0.0099.
+What replicated is the target nomination. The Aurora narrowing does not replicate under a
+class-versus-remainder rate test (Fisher 0.024 then 0.095), and `census_comparison.csv` records the
+narrowing as `curated-pair-only`, not computed stability. PTEN, CDKN2A and TP53 are concordant negatives.
+Do not pool the censuses; the pre-specification forbids it. See `RESULT_second_census_2026-09-06.md`.

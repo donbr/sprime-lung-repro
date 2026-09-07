@@ -179,13 +179,21 @@ the leave-one-class-out sweep, a threshold sweep, and the Bonferroni correction 
 That three of four genotypes fail is the point, not a disappointment: the same procedure that returns a
 positive for RB1 returns chance elsewhere, which is what distinguishes this from the circular version.
 
-**A second blinded census, assembled 2026-09-06 by different agents, replicates all four outcomes.**
+**A second blinded census, assembled 2026-09-06 by different agents, reaches the same four verdicts.**
 Against a rule pre-specified and committed before that census existed — a genotype is claimable only if it
-clears chance in both censuses — RB1 clears again at 13/73, p = 0.00097, while PTEN, CDKN2A and TP53 are
-concordant negatives. The Aurora class carries the enrichment in both, and **the two censuses recover
-exactly the same 13 compounds** despite sharing only 16 of their roughly 20 RB1 targets. Agreement between
-the censuses is moderate (Jaccard 0.39 to 0.70 on targets), so a single census is a noisier instrument than
-its frozen presentation suggests. Full report in `concordance/RESULT_second_census_2026-09-06.md`.
+clears chance in both censuses, separately and without pooling — RB1 passes at 13/73, p = 0.00097, while
+PTEN, CDKN2A and TP53 are concordant negatives.
+
+Read the second census carefully, because it adds less than it appears to. Its resolved RB1 reference set
+is a **strict subset** of the first census's (73 of 94), and both are scored against the same fixed
+candidate set from the same drug-response data, so the identical recovered set is arithmetic rather than
+independent convergence, and the smaller p-value comes entirely from nominating 21 fewer compounds that
+were all misses. What genuinely replicated is the *target nomination*: a second set of blind curators again
+named the Aurora, PARP and IAP targets the window recovers. The Aurora narrowing itself does **not**
+replicate under a class-versus-remainder rate test (Fisher p = 0.024 in census 1, 0.095 in census 2).
+Census agreement is moderate (Jaccard 0.39 to 0.70 on targets), so a single census is a noisier instrument
+than its frozen presentation suggests. Full report, including what the exercise does not establish, in
+`concordance/RESULT_second_census_2026-09-06.md`.
 
 ### The superseded first pass — the 7-row starter set
 
@@ -236,7 +244,7 @@ the difference matters more than the two
 p-values' similar magnitude suggests. RB1's recovery is corroborated by independent literature: Aurora A
 inhibition (Gong et al. 2019, PMID 30373917) and Aurora B dependency (Oser et al. 2019, PMID 30373918) are
 each independently established as RB1-loss-selective vulnerabilities in RB1-deficient models, so RB1's
-p = 0.0013 enrichment here is a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
+p = 0.0013 enrichment against this starter set — 0.0099 against the census that superseded it — was a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
 arithmetically real and reproducible against this starter set — it is not a coding fluke — but the census
 above showed it to be an artifact of a reference set small enough to be dominated by one target family, and
 it has no independent literature support either: no PubMed-indexed study demonstrates TP53-mutant-selective sensitivity to KIF11/Eg5 inhibitors,

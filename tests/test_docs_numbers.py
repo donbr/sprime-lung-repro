@@ -182,8 +182,11 @@ def test_verifying_claim_table():
 def test_second_census_verdicts():
     """The pre-specified both-must-clear verdicts must match what the comparison actually computed.
 
-    Guards the strongest claim in the repo: that RB1 replicated across two independently assembled
-    censuses. If a rerun ever changes a verdict, this fails rather than letting the prose stand.
+    Also pins the two caveats that keep the result honest: that census B's RB1 reference is a strict
+    subset of census A's (so the censuses are NOT statistically independent and their identical
+    recovered set is arithmetic), and that the Aurora narrowing is stable only for the pre-named pair
+    rather than for the computed classes. If a rerun changes any of that, this fails rather than
+    letting the prose stand.
     """
     df = _read("concordance/results/census_comparison.csv")
     _assert_one_row_per_gene(df, "concordance/results/census_comparison.csv")
@@ -197,9 +200,30 @@ def test_second_census_verdicts():
             f"documents claim — update the documents, and do not change the rule."
         )
     rb1 = df.set_index("gene").loc["RB1"]
-    for path in ("CLAUDE.md", "concordance/README.md", "docs/evidence.md"):
-        _assert_in(_doc(path), f"p = {rb1.hyperg_p_b:.2g}".replace("p = ", ""), path,
+    for path in ("CLAUDE.md", "concordance/README.md", "docs/evidence.md",
+                 "concordance/RESULT_second_census_2026-09-06.md"):
+        doc = _doc(path)
+        _assert_in(doc, f"{rb1.hyperg_p_b:.2g}", path,
                    "concordance/results/census_comparison.csv (census-2 RB1 p)")
+        compact = f"{int(rb1.recovered_b)}/{int(rb1.ref_b)}"
+        spaced = f"{int(rb1.recovered_b)} / {int(rb1.ref_b)}"
+        assert compact in doc or spaced in doc, (
+            f"{path} does not contain {compact!r} or {spaced!r}, derived from "
+            f"concordance/results/census_comparison.csv (census-2 RB1 recovered/ref)."
+        )
+    # the nesting is the reason the second census adds less than it appears to; pin that it is stated
+    assert bool(rb1.ref_b_subset_of_a), (
+        "census_comparison.csv no longer reports census B's RB1 reference as a subset of census A's. "
+        "RESULT_second_census_2026-09-06.md §2 is written around that nesting — recheck the prose."
+    )
+    _assert_in(_doc("concordance/RESULT_second_census_2026-09-06.md"),
+               "strict subset", "concordance/RESULT_second_census_2026-09-06.md",
+               "concordance/results/census_comparison.csv (ref_b_subset_of_a)")
+    # the narrowing is curated-pair-only, not computed stability; the docs must not claim otherwise
+    assert str(rb1.narrowing_stable) == "curated-pair-only", (
+        f"census_comparison.csv reports narrowing_stable={rb1.narrowing_stable!r}; the documents say "
+        f"the Aurora narrowing is stable only for the pre-named pair. Update both together."
+    )
 
 
 def test_aurora_leave_out_quoted_everywhere():
@@ -287,7 +311,14 @@ def test_concordance_readme_blind_table():
         row = (f"| {r.gene} | {int(r.ref_in_universe)} | {int(r.candidates)} | "
                f"{int(r.universe)} | {int(r.recovered)} | {r.recovery:.0%} |")
         _assert_in(doc, row, "concordance/README.md", BLIND)
-        _assert_in(doc, f"{r.hyperg_p:.2g}", "concordance/README.md", f"{BLIND} (hyperg_p)")
+        # anchor the p-value to its own row: a bare "1" (CDKN2A) matches any document at all
+        _assert_in(doc, f"| {r.gene} |", "concordance/README.md", BLIND)
+        cell = f"{r.hyperg_p:.2g}"
+        line = next((ln for ln in doc.splitlines() if ln.startswith(row[:-1])), "")
+        assert cell in line, (
+            f"concordance/README.md row for {r.gene} does not carry hyperg_p {cell!r} from {BLIND}; "
+            f"the row found was {line!r}"
+        )
 
 
 def test_concordance_readme_seed_table():
@@ -313,8 +344,29 @@ def test_concordance_readme_seed_table():
                f"{int(r.universe)} | {int(r.recovered)} | {r.recovery:.0%} |")
         _assert_in(doc, row, "concordance/README.md",
                    "concordance/results/concordance_report.csv")
-        _assert_in(doc, f"{r.hyperg_p:.2g}", "concordance/README.md",
-                   "concordance/results/concordance_report.csv (hyperg_p)")
+        line = next((ln for ln in doc.splitlines() if ln.startswith(row[:-1])), "")
+        assert f"{r.hyperg_p:.2g}" in line, (
+            f"concordance/README.md superseded row for {r.gene} does not carry hyperg_p "
+            f"{r.hyperg_p:.2g} from {SEED}; the row found was {line!r}"
+        )
+
+
+def test_committed_csvs_are_lf():
+    """Every committed data file must use LF.
+
+    .gitattributes marks these -text so git stores them verbatim, which means a writer that emits CRLF
+    on Windows commits CRLF and the published md5s stop matching across platforms. That already
+    happened once. No other test in this file would notice.
+    """
+    import subprocess
+    listing = subprocess.run(["git", "ls-files", "*.csv", "results/blocking_summary.txt"],
+                             capture_output=True, text=True, cwd=ROOT).stdout.split()
+    bad = [f for f in listing if b"\r\n" in open(os.path.join(ROOT, f), "rb").read()]
+    assert not bad, (
+        f"these committed data files contain CRLF: {bad}. They are marked -text in .gitattributes, so "
+        f"the bytes are stored verbatim and their md5s would differ from the published ones. Pass "
+        f"lineterminator='\\n' in the writer that produced them and rewrite the files."
+    )
 
 
 if __name__ == "__main__":

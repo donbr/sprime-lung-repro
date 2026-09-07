@@ -11,7 +11,17 @@ purpose. Supersedes the illustrative run on `reference_seed_grounded.csv` (7 row
 | `reference_set_2026-08-31.csv` (full census) | 95 | `a330987d6c02f9cb8826cc65e908301c` |
 | `reference_set_2026-08-31_directional.csv` (**primary**) | 93 | `76845dcc6131ab917717c7724da2c420` |
 
-Both frozen, hashed and schema-validated **before** the engine was run: every row carries a target, at
+**Freeze status — read this before comparing the two censuses.** These files were hashed and the engine
+was run on 2026-08-31, but the *commit* did not happen until 2026-09-06 (`9ca5046`). The protocol's Step 2
+asks for the commit to precede the run, so this census satisfies that requirement only **retroactively**.
+The md5s establish that the files have not changed since they were committed; they cannot establish what
+the files contained six days earlier. That rests on attestation and on filesystem timestamps, not on a
+timestamp any third party recorded. The 2026-09-06 census does satisfy Step 2 properly, and its raw
+per-agent output is committed so its verbatim assembly can be re-derived — neither of which is true here,
+where the assembly is recorded "verbatim in substance" in the notes but cannot be reconstructed from a
+committed input.
+
+Both frozen, hashed and schema-validated before the engine was run: every row carries a target, at
 least one of PMID/DOI, the exact query string that surfaced it, `date_frozen`, and a one-line rationale —
 the four fields the protocol makes mandatory and which the seed set was missing on 5 of 7 rows.
 

@@ -53,6 +53,15 @@ md5s; `fetch_data.py` automates the same thing and skips any file already presen
 Only RB1 rises above the permutation null (marginally); the candidate lists are otherwise not distinguishable
 from random genotype labels, and thin sharply under a bootstrap-CI gate.
 
+**Literature-blind concordance (`concordance/`).** Two independently assembled, frozen censuses. Only RB1
+clears chance: 13/94 at p = 0.0099 against the 2026-08-31 census of record, and it passes the same
+pre-specified gate against a second census. The enrichment is carried by the Aurora kinase class — removing
+it leaves 6/69 at p = 0.34 — so the supported claim is Aurora-specific, not a broad recovery of RB1 biology.
+PTEN, CDKN2A and TP53 are concordant negatives. The second census corroborates the *target nomination*
+rather than reproducing the result independently: its reference set is a strict subset of the first's. The
+near-null result above and this narrow positive are both the finding. See
+[`concordance/RESULT_second_census_2026-09-06.md`](concordance/RESULT_second_census_2026-09-06.md).
+
 ## Layout
 ```
 sprime-lung-repro/
@@ -64,7 +73,7 @@ sprime-lung-repro/
 ├── blocking_analyses.py     # permutation null + line-centring
 ├── bootstrap_ci_gate.py     # per-compound bootstrap CI gate
 ├── demeter_validation.py    # DEMETER2 RNAi genetic-dependency validation (needs the DEMETER2 file)
-├── concordance/             # literature-blind concordance benchmark scaffold (protocol + engine)
+├── concordance/             # literature-blind concordance benchmark (protocol, engine, two frozen censuses)
 ├── dashboard/               # interactive React + Vite web dashboard & Playwright UI verification
 ├── CONNECTORS.md            # how the bio-research MCP connectors support the curation steps
 ├── pyproject.toml · uv.lock # uv dependency declaration + hashed lock (source of truth)

@@ -4,12 +4,14 @@ This repository computes the S′ drug-response metric on public PRISM and DepMa
 cell lines, calls tumor-suppressor genotypes for four genes, and runs the statistical controls needed to
 decide whether the resulting candidate lists mean anything. The short answer is that they largely do not —
 only RB1 rises above a label-permutation null, and then only marginally. Under this repository's
-literature-blind benchmark, **only RB1 clears chance**, and it does so twice: 13/94 at p = 0.0099 against
-the 2026-08-31 census and 13/73 at p = 0.00097 against an independently assembled second census, recovering
-the same 13 compounds both times. The enrichment is carried entirely by the Aurora kinase class, so the
-claim is Aurora-specific rather than a broad recovery of RB1 biology. PTEN, CDKN2A and TP53 are concordant
+literature-blind benchmark, **only RB1 clears chance** — 13/94 at p = 0.0099 against the 2026-08-31
+census of record, and it passes the same gate against a second census assembled blind six days later. The
+second census corroborates the *target nomination* rather than reproducing the result independently: its
+reference set is a strict subset of the first, so the two share almost everything that determines the
+answer. The enrichment is carried by the Aurora kinase class. PTEN, CDKN2A and TP53 are concordant
 negatives; the TP53–KIF11 signal is an internal empirical finding of this dataset and is **not**
-literature-validated (see [evidence.md](evidence.md)). Everything here is deterministic and
+literature-validated (see [evidence.md](evidence.md), and `concordance/RESULT_second_census_2026-09-06.md`
+for what the replication does and does not establish). Everything here is deterministic and
 checksum-guarded.
 
 ## Reading paths

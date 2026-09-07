@@ -49,14 +49,25 @@ def read_one(path, gene):
     if not os.path.exists(path):
         print(f"ERROR: missing per-genotype census file: {path}")
         sys.exit(2)
-    with open(path, encoding="utf-8", newline="") as f:
-        rows = list(csv.DictReader(f))
+    # utf-8-sig: a BOM on an agent-produced file would otherwise turn the first header into
+    # "\ufeffgenotype" and surface as a baffling column mismatch.
+    # restkey/restval: a row with MORE fields than the header would otherwise smuggle the extra value
+    # through validation under the None key and explode inside the writer, after a partial write.
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.DictReader(f, restkey="__extra__", restval=None))
     if not rows:
         print(f"ERROR: {path} has no data rows")
         sys.exit(2)
     for i, r in enumerate(rows, start=2):
-        if sorted(k for k in r if k is not None) != sorted(COLUMNS):
-            print(f"ERROR: {path} line {i}: columns {sorted(k for k in r if k)} != {sorted(COLUMNS)}")
+        if "__extra__" in r:
+            print(f"ERROR: {path} line {i}: more fields than the header ({r['__extra__']!r} left over)")
+            sys.exit(2)
+        if sorted(r) != sorted(COLUMNS):
+            print(f"ERROR: {path} line {i}: columns {sorted(r)} != {sorted(COLUMNS)}")
+            sys.exit(2)
+        missing = [c for c in COLUMNS if r[c] is None]
+        if missing:
+            print(f"ERROR: {path} line {i}: fewer fields than the header (missing {missing})")
             sys.exit(2)
         if r["genotype"].strip().upper() != gene:
             print(f"ERROR: {path} line {i}: genotype {r['genotype']!r} != {gene}")
@@ -100,8 +111,14 @@ def main():
         directional.extend(keep)
         print(f"{g:9}{len(rows):>6}{len(inv):>9}{len(keep):>9}")
 
-    write_census(a.out_full, full)
-    write_census(a.out_directional, directional)
+    # Both censuses are validated and fully built before ANYTHING is written, and each is written to a
+    # temporary file and then os.replace()d into position — the same discipline fetch_data.py uses. A
+    # half-written frozen census is the worst artifact this script could produce, since its whole purpose
+    # is an auditable, hashed file.
+    for path, rows_out in ((a.out_full, full), (a.out_directional, directional)):
+        tmp = path + ".part"
+        write_census(tmp, rows_out)
+        os.replace(tmp, path)
     print(f"\n{'':9}{len(full):>6}{len(full) - len(directional):>9}{len(directional):>9}   TOTAL")
     for p in (a.out_full, a.out_directional):
         print(f"  {md5_of(p)}  {os.path.basename(p)}  ({sum(1 for _ in open(p, encoding='utf-8')) - 1} rows)")

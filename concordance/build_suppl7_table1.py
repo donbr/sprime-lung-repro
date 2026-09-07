@@ -690,15 +690,18 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "§6 shows the matched annotation text for every recovered compound so each call can be checked.")
     A("4. **The blinding is structural, not absolute.** The assembly step was initiated from within a "
       "results-aware project, so the guarantee does not rest on anyone's ignorance. It rests on two "
-      "procedural facts. The four AI agents that built the rows worked in isolation, without repository "
-      "access and without sight of any ΔpS′ value. Their output was transferred verbatim — no row added, "
-      "removed, reworded or reordered — which removes any opportunity to shape the reference set after "
-      "seeing how it would score. What a reviewer can verify directly is that the reference set has not "
-      "changed since it was hashed; what structural blinding does not provide is an independent record of "
-      "the conditions under which the rows were written. A fully independent replication would assemble the "
-      "census before any results exist. (`BLIND_CENSUS_2026-08-31.md` states this same limitation in terms "
-      "of the person who commissioned the census; the procedural statement here is the accurate one, and "
-      "that document is left unedited as the record of the day.)")
+      "procedural rules. The four AI agents that built the rows worked in isolation, without repository "
+      "access and without sight of any ΔpS′ value; and their output was to be transferred verbatim — no row "
+      "added, removed, reworded or reordered — which removes any opportunity to shape the reference set "
+      "after seeing how it would score. **For this census the verbatim rule is attested, not "
+      "reconstructible:** no per-agent raw output was committed, so a reviewer cannot re-derive the frozen "
+      "file from its inputs. The 2026-09-06 census can be re-derived, because `census_2026-09-06_raw/` is "
+      "committed. What a reviewer can verify here is that the reference set has not changed since it was "
+      "committed; what structural blinding does not provide is an independent record of the conditions "
+      "under which the rows were written. A fully independent replication would assemble the census before "
+      "any results exist. (`BLIND_CENSUS_2026-08-31.md` states this same limitation in terms of the person "
+      "who commissioned the census; the procedural statement here is the accurate one, and that document is "
+      "left unedited as the record of the day.)")
     if rob.get("aurora"):
         A(f"5. **The enrichment rests on one target class.** Removing the Aurora pair leaves "
           f"{rob['aurora'][3]} of {rob['aurora'][2]} recovered at p = {fmt_p(rob['aurora'][4])}. The result "
@@ -706,7 +709,11 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
           f"See §7.2.")
     n = 6 if rob.get("aurora") else 5
     A(f"{n}. **The freeze commit is retroactive.** The census was hashed and run on 2026-08-31 and committed "
-      f"on 2026-09-06. The hashes, not the commit date, are the evidence.")
+      f"on 2026-09-06. The protocol asks for the commit to precede the run, so this census meets that "
+      f"requirement only after the fact. The hashes establish that the files have not changed since they "
+      f"were committed; they cannot establish what the files contained six days earlier, which rests on "
+      f"attestation and filesystem timestamps rather than on a timestamp a third party recorded. The "
+      f"2026-09-06 census was committed before it was scored and does meet the requirement.")
     A(f"{n + 1}. **Model-system annotation is post-hoc.** The *Model system* and *Census caveat* columns were "
       f"added on 2026-09-06 from the cited primaries and the census assembly notes. They are presentation "
       f"only and enter no computation.")
