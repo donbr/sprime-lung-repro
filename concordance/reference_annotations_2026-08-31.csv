@@ -1,0 +1,105 @@
+# POST-HOC ANNOTATION — added 2026-09-06, NOT part of the frozen 2026-08-31 census.
+#
+# The census (reference_set_2026-08-31*.csv, frozen and md5-hashed 2026-08-31, commit 9ca5046) is
+# never edited. This file adds two presentation-only columns for Supplement 7:
+#   tissue         — the model system of the cited primary, read off its inclusion_rationale/abstract
+#   evidence_flag  — the census builders' own caveat for that row, quoted in substance from
+#                    BLIND_CENSUS_NOTES_2026-08-31.md ("" = the builder flagged nothing)
+#
+# Neither column enters any computation: recovery, misses, hypergeometric p and permutation p are
+# unchanged whether or not this file exists. build_suppl7_table1.py joins on genotype+target+pmid and
+# prints "not annotated" for any census row this file does not cover.
+genotype,target,pmid,tissue,evidence_flag
+PTEN,PARP1,20049735,pan-cancer (isogenic),contested — refuted by PMIDs 27375368/33138032/32901889
+PTEN,PIK3CB,18755892,pan-cancer,
+PTEN,PIK3CB,22588880,pan-cancer (422-line panel),
+PTEN,PIK3CB,25398829,pan-cancer panel,
+PTEN,CHD1,28166537,"prostate, breast",
+PTEN,CHD1,39508435,prostate,
+PTEN,ATM,25870146,pan-cancer (siRNA screen),
+PTEN,DHODH,28255082,pan-cancer,
+PTEN,DHODH,32661432,prostate,
+PTEN,ICMT,41507994,TNBC,
+PTEN,STAT3,41287778,colorectal,
+PTEN,MDM2,37496993,colorectal,
+PTEN,BRD4,38617536,colorectal,
+PTEN,EP300,32398948,colorectal,
+PTEN,PSMB5,33428749,glioblastoma,
+PTEN,PSMB5,33220333,gallbladder,
+PTEN,MCL1,32737157,glioblastoma,
+PTEN,PNKP,33933518,colorectal,
+PTEN,NUAK1,29566768,breast (mammary),
+PTEN,PDK1,31461649,pan-cancer,
+PTEN,SMARCA4,30496141,prostate,
+PTEN,KDM4B,30266800,TNBC,
+PTEN,RAD51,30863489,glioma,
+PTEN,LOX,31185211,glioblastoma,
+PTEN,BCL2L1,27590631,prostate,
+CDKN2A,PRMT5,26912360,pan-cancer (isogenic MTAP),
+CDKN2A,WDR77,26912360,pan-cancer (isogenic MTAP),
+CDKN2A,PRMT5,26912361,pan-cancer (390 lines),
+CDKN2A,MAT2A,27068473,pan-cancer (isogenic MTAP),
+CDKN2A,RIOK1,27068473,pan-cancer (isogenic MTAP),contested — PMID 29983885 found no differential kinase requirement
+CDKN2A,MAT2A,33450196,pan-cancer (isogenic HCT116),
+CDKN2A,MAT2A,33829783,pan-cancer,
+CDKN2A,PRMT5,37552839,"NSCLC, mesothelioma",
+CDKN2A,PRMT5,40694535,pancreatic,
+CDKN2A,PRMT5,40146197,pan-cancer (isogenic MTAP),
+CDKN2A,PRMT5,38595098,pan-cancer (isogenic MTAP),
+CDKN2A,PRMT5,39756156,pan-cancer,
+CDKN2A,PRMT5,40035511,pan-cancer (isogenic MTAP),
+CDKN2A,PRMT5,40553452,MPNST,
+CDKN2A,PRMT5,33795785,mesothelioma,
+CDKN2A,PRMT1,31257072,pan-cancer,
+CDKN2A,PRMT1,30916320,pan-cancer,
+CDKN2A,MAT2A,39983717,osteosarcoma,
+CDKN2A,ACO1,31734690,pan-cancer,collateral — 9p21 passenger co-deleted with CDKN2A
+CDKN2A,ADSS2,10197619,T-ALL,collateral — 9p21 passenger co-deleted with CDKN2A
+CDKN2A,HBS1L,41101730,pan-cancer,conditioned on FOCAD loss — comparison is FOCAD-null vs intact
+CDKN2A,HBS1L,42001523,pan-cancer,conditioned on FOCAD loss — comparison is FOCAD-null vs intact
+CDKN2A,CDK4,24495407,melanoma,
+CDKN2A,CDK6,24495407,melanoma,
+CDKN2A,CDK4,22711607,glioblastoma,
+RB1,AURKB,30373918,SCLC,
+RB1,AURKA,30373917,"pan-cancer panel (SCLC, TNBC)",
+RB1,AURKA,34741392,retinoblastoma,
+RB1,TTK,36070391,breast (ER+),
+RB1,CHEK1,29386107,TNBC,
+RB1,PLK1,29386107,TNBC,
+RB1,XIAP,41285729,TNBC,
+RB1,SKP2,32265224,SCLC (mouse + PDX),genetics strong but pharmacology tool-grade — compound field deliberately blank
+RB1,SRC,33334906,prostate,
+RB1,EZH2,28059767,prostate,
+RB1,GPX4,36928314,prostate,
+RB1,BCL2L1,40436896,prostate,
+RB1,CSNK2A1,38781347,ovarian (HGSC),
+RB1,ATR,41442499,breast,
+RB1,PKMYT1,41442499,breast,
+RB1,AHR,40276038,bladder,prediction-first — single computational SL paper with validation
+RB1,PARP1,42618565,hepatocellular,
+RB1,KIF11,42618565,hepatocellular,
+RB1,NUDT15,40904703,pan-cancer (543 lines),collateral — NUDT15 co-deleted with RB1; not a functional dependency
+RB1,CCNA2,40836083,SCLC,stratified by high-E2F / compromised G1-S — RB1 loss is one cause among others
+RB1,CCNB1,40836083,SCLC,stratified by high-E2F / compromised G1-S — RB1 loss is one cause among others
+RB1,CDK4,38528594,mantle cell lymphoma,INVERSE-DIRECTION — sensitive genotype is RB1-proficient; excluded from primary
+RB1,CDK6,38528594,mantle cell lymphoma,INVERSE-DIRECTION — sensitive genotype is RB1-proficient; excluded from primary
+TP53,WEE1,19887545,pan-cancer,chemo-combination design
+TP53,WEE1,21799033,"lung, breast, prostate",radiosensitisation design
+TP53,CHEK1,23839309,HNSCC,chemo-combination design
+TP53,CHEK1,22446188,TNBC,chemo-combination; UCN-01 also inhibits MK2 (PMID 17292828)
+TP53,CHEK1,30103170,breast,chemo-combination design
+TP53,ATR,21490603,pan-cancer,
+TP53,ATR,26563132,CLL,
+TP53,ATR,21552262,pan-cancer,
+TP53,PLK1,19225112,colorectal (isogenic HCT116),
+TP53,MAPKAPK2,24239348,NSCLC (lung),
+TP53,HSP90AA1,26009011,mouse (mutant-p53),
+TP53,HDAC6,21637290,pan-cancer,
+TP53,HMGCR,22265415,breast,
+TP53,MVK,27775703,pan-cancer,
+TP53,DNMT1,25238040,pan-cancer,
+TP53,POLQ,35972384,pan-cancer,
+TP53,PRKDC,35972384,pan-cancer,combination-only — weight below the POLQ row from the same paper
+TP53,CDC7,31578521,hepatocellular,
+TP53,PIP4K2A,34001596,pan-cancer,
+TP53,PIP4K2B,34001596,pan-cancer,
