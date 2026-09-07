@@ -288,7 +288,7 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
           f"p = {fmt_p(sens_row.hyperg_p)} / {fmt_p(sens_row.perm_p)} |")
     A("")
     if gene == "RB1":
-        A("**The two-row decision rule was written blind.** The census builder flagged two rows "
+        A("**The two-row decision rule was written blind.** The RB1 census agent flagged two rows "
           "(CDK4 and CDK6 / palbociclib, PMID 38528594) as inverse-direction — there the *RB1-proficient* "
           "genotype is the sensitive one — and stated, before any result existed, that they "
           "\"should be dropped rather than counted as positives\" if the benchmark scores RB1-loss → "
@@ -357,8 +357,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
         A("")
     flagged = [e for e in targets if e["flag"]]
     if flagged:
-        A("**The census grades its own rows.** The caveat column is quoted in substance from the builders' "
-          "notes, not added afterwards to explain results away. Rows carrying a caveat "
+        A("**The census grades its own rows.** The caveat column is quoted in substance from the census "
+          "assembly notes, not added afterwards to explain results away. Rows carrying a caveat "
           f"({', '.join(e['target'] for e in flagged)}) should be weighted below the rest by any reader "
           "scoring this table.")
         A("")
@@ -423,10 +423,11 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
             seen |= rest
     aurora = (" " + "; ".join(classes)) if classes else " none"
     A(f"> To test whether the S′ selection window recovers established {gene} biology, a reference set of "
-      f"{gene}-selective vulnerabilities was assembled from the published literature **blind to ΔpS′**. The "
-      f"census was built by four isolated AI agents, one per genotype, each without access to the analysis "
-      f"repository and without sight of any S′, pS′ or ΔpS′ value; their output was assembled verbatim, then "
-      f"frozen and checksum-verified before the benchmark was run. Of {tested_total} PRISM compounds "
+      f"{gene}-selective vulnerabilities was compiled from the published literature under **structural "
+      f"blinding**. In this blinded census assembly, four isolated AI agents, one per genotype, worked from "
+      f"stated inclusion criteria without access to the analysis repository and without sight of any S′, pS′ "
+      f"or ΔpS′ value; their output was transferred verbatim into the reference file, which was then frozen "
+      f"and checksum-verified before the benchmark was run. Of {tested_total} PRISM compounds "
       f"annotated to these literature-nominated targets and measured in the {gene} cohort "
       f"(≥3 wildtype and ≥3 mutant lung lines), the window recovered {rec_total} "
       f"({pct(rec_total, tested_total)}; hypergeometric p = {fmt_p(row.hyperg_p)}, "
@@ -450,21 +451,27 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "predictive value. Recovery percentage is not accuracy.")
     A("2. **Pan-cancer reference, lung measurement.** The census draws on SCLC, breast/TNBC, prostate, "
       "hepatocellular, retinoblastoma, ovarian and bladder models; recovery is measured in lung lines. "
-      "The builders recorded why: *\"Lung-specific primary evidence is scarce for PTEN and CDKN2A and "
+      "The census records why: *\"Lung-specific primary evidence is scarce for PTEN and CDKN2A and "
       "moderate for RB1 and TP53. A lung-restricted census would have been too small to test; the "
       "pan-cancer scope is a deliberate and necessary choice, and a limitation to state.\"*")
     A("3. **Annotation noise.** Target → compound expansion relies on PRISM's own target/MOA annotations, "
       "which the referee review flagged as sometimes wrong (barasertib, for example, is mis-annotated). "
       "§5 shows the matched annotation text for every recovered compound so each call can be checked.")
-    A("4. **The blind rests on builder isolation, not on the commissioner's ignorance.** The person who "
-      "commissioned the census had already seen the ΔpS′ results. The blind is enforced by the isolation of "
-      "the four AI agents and by the verbatim-assembly rule; the frozen hashes, the per-row query strings "
-      "and the builders' notes are the audit trail. A fully independent replication would commission the "
-      "census before any results exist.")
+    A("4. **The blinding is structural, not absolute.** The assembly step was initiated from within a "
+      "results-aware project, so the guarantee does not rest on anyone's ignorance. It rests on two "
+      "procedural facts. The four AI agents that built the rows worked in isolation, without repository "
+      "access and without sight of any ΔpS′ value. Their output was transferred verbatim — no row added, "
+      "removed, reworded or reordered — which removes any opportunity to shape the reference set after "
+      "seeing how it would score. What a reviewer can verify directly is that the reference set has not "
+      "changed since it was hashed; what structural blinding does not provide is an independent record of "
+      "the conditions under which the rows were written. A fully independent replication would assemble the "
+      "census before any results exist. (`BLIND_CENSUS_2026-08-31.md` states this same limitation in terms "
+      "of the person who commissioned the census; the procedural statement here is the accurate one, and "
+      "that document is left unedited as the record of the day.)")
     A("5. **The freeze commit is retroactive.** The census was hashed and run on 2026-08-31 and committed on "
       "2026-09-06. The hashes, not the commit date, are the evidence.")
     A("6. **Model-system annotation is post-hoc.** The *Model system* and *Census caveat* columns were added "
-      "on 2026-09-06 from the cited primaries and the builders' notes. They are presentation only and enter "
+      "on 2026-09-06 from the cited primaries and the census assembly notes. They are presentation only and enter "
       "no computation.")
     A("")
 
