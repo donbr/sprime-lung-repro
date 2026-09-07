@@ -21,7 +21,7 @@ they must change.
 
 | Review issue | What it demands | Implementation | Committed result |
 |---|---|---|---|
-| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0013, TP53 p=5.6e-08, PTEN p=0.30, CDKN2A untestable |
+| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0099 (Aurora-carried; 0.34 without it), PTEN p=0.94, CDKN2A p=1, TP53 p=0.51 |
 | B2 no null model | candidate sizes, permutation FDR, bootstrap gate | `blocking_analyses.py` §1, `bootstrap_ci_gate.py` | 97/48/94/16; FDR 1.00/0.87/0.68/1.27; survivors 26/3/16/1 |
 | B3 sensitivity confound | per-line median S′ split by genotype | `blocking_analyses.py` §2 | offsets −0.02 to −0.13, corr 0.996–1.000 |
 | B4 worked example wrong | recompute to S′ ≈ 6.70 | `sprime_pipeline.py` anchor, `test_sprime_worked_example` | 6.704 |
@@ -49,9 +49,12 @@ Do not assume a control exists because the review asks for it:
   for the main significance analysis (`bh_fdr` exists, but only inside `demeter_validation.py`);
   **M8** an RB1 × TP53 interaction term.
 
-`concordance/reference_seed_grounded.csv` also has a provenance hole: 5 of its 7 rows carry neither PMID nor
-DOI, and `search_terms` is empty on all 7, though the protocol makes both mandatory. B1's remedy rests on
-documented blind assembly, so those fields are load-bearing, not bookkeeping.
+`concordance/reference_seed_grounded.csv` has a provenance hole: 5 of its 7 rows carry neither PMID nor
+DOI, and `search_terms` is empty on all 7, though the protocol makes both mandatory. **That set is
+superseded** by `reference_set_2026-08-31_directional.csv` (93 rows, every row carrying a PMID or DOI, the
+query string, a freeze date and a rationale), which is the benchmark of record. The seed set and its results
+stay in the tree, labelled, because its TP53 p = 5.6e-08 collapsing to 0.51 against a real census is the
+clearest argument for why the census was needed.
 
 ## Commands
 
@@ -174,9 +177,27 @@ doxorubicin/A549 → S′ ≈ 6.70; 94 lung lines; cohort sizes near Suppl-9 (`E
 
 ## Concordance benchmark
 
-`concordance/` is a *scaffold*, not a finished benchmark. The cardinal rule in
-`PROTOCOL_literature_blind_concordance.md`: the reference set must be assembled from literature and frozen
-**before** anyone looks at ΔpS′ — adding a compound because it scored well invalidates the benchmark.
-`reference_seed_grounded.csv` is an incomplete starter set (no CDKN2A entries). Always report recovery
-together with the enrichment p-value and the misses; recovery alone is what made the original analysis
-circular.
+The cardinal rule in `PROTOCOL_literature_blind_concordance.md`: the reference set must be assembled from
+literature and frozen **before** anyone looks at ΔpS′ — adding a compound because it scored well invalidates
+the benchmark. Always report recovery together with the enrichment p-value and the misses; recovery alone is
+what made the original analysis circular.
+
+**There are two runs in the tree and only one is the benchmark of record.**
+
+| | Reference | Results | Status |
+|---|---|---|---|
+| Benchmark of record | `reference_set_2026-08-31_directional.csv` (93 rows) | `results/2026-08-31_blind/` | quote this |
+| Superseded first pass | `reference_seed_grounded.csv` (7 rows) | `results/concordance_report.csv` | illustrative only, labelled in place |
+
+Do not quote the seed run's figures as findings; its TP53 p = 5.6e-08 collapsed to 0.51 against the census.
+Both stay committed, and `tests/test_docs_numbers.py` pins each to the documents that cite it.
+
+`build_suppl7_table1.py` generates the manuscript-facing `SUPPL7_TABLE1_<GENE>.md` from the frozen census.
+It imports `candidates` and `token_match` from `concordance_enrichment.py` rather than reimplementing the
+window — do not reintroduce a local `-2` or `MINN = 3` there either — and it fails closed, exiting 1 without
+writing if any acceptance gate stops reproducing.
+
+**The RB1 result is Aurora-carried.** Removing AURKA and AURKB from the reference set leaves
+6 of 69 recovered at p = 0.34 (`concordance/results/2026-08-31_blind/robustness_RB1.csv`). Any claim
+built on this benchmark must be Aurora-specific; §7 of the generated supplement holds the
+leave-one-class-out, threshold and multiple-testing sweeps.

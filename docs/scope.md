@@ -120,6 +120,12 @@ analysis, not evidence that PTEN dependencies do not exist.
 
 ## The concordance reference set is incomplete
 
+**This section describes the superseded starter set.** It was replaced on 2026-08-31 by
+`concordance/reference_set_2026-08-31_directional.csv`, a 93-row census in which every row carries a PMID or
+DOI, the query string that surfaced it, a freeze date and a rationale — the fields whose absence is the
+complaint below. The gaps recorded here are therefore historical, and they are what the census was built to
+close. See `concordance/BLIND_CENSUS_2026-08-31.md`.
+
 `concordance/reference_seed_grounded.csv` holds 7 rows: 5 for RB1, 1 for PTEN, 1 for TP53, and none for
 CDKN2A. Of those 7 rows, 5 carry neither a PMID nor a DOI, and the `search_terms` column is empty on all 7
 — even though the blind-assembly protocol described in `evidence.md` and `CONNECTORS.md` makes both fields

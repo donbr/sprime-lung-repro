@@ -1,0 +1,12 @@
+analysis,removed,tested_removed,recovered_removed,ref_left,recovered_left,hyperg_p
+drop_class,ATR,4,0,57,1,0.487137377889
+drop_class,CHEK1,10,0,51,1,0.44906102401
+drop_class,DNMT1,5,0,56,1,0.480967601983
+drop_class,HDAC6,13,0,48,1,0.429043960543
+drop_class,HMGCR,7,0,54,1,0.468418724382
+drop_class,HSP90AA1,9,0,52,1,0.455585837937
+drop_class,PLK1,7,1,54,0,1
+drop_class,POLQ,1,0,60,1,0.505236718204
+drop_class,PRKDC,3,0,58,1,0.493238345884
+drop_class,WEE1,2,0,59,1,0.499271222719
+full,,0,0,61,1,0.511135535274

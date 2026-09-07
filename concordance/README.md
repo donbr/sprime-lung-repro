@@ -23,14 +23,38 @@ python concordance_enrichment.py --reference reference_seed_grounded.csv    # or
 hypergeometric enrichment; there is no fallback, and the script exits 4 with an install message if
 scipy is missing.)
 
-## Demonstration on the grounded starter set (illustrative — NOT the final benchmark)
+## The benchmark of record — 2026-08-31 literature-blind census
 
-Reference targets expanded to all PRISM compounds annotated to them, restricted to the tested cohort:
+The protocol was executed against a 93-row census frozen and md5-hashed before scoring (95 rows before two
+inverse-direction entries are excluded by a rule the census agent wrote before any result existed). This is
+the run to quote. Source: `results/2026-08-31_blind/concordance_report_primary_directional.csv`.
 
 | genotype | reference (in universe) | candidates | universe | recovered | recovery | hypergeometric p | permutation p |
 |---|---|---|---|---|---|---|---|
-| RB1 | 49 | 94 | 1360 | 10 | 20% | **0.0013** | **0.0010** |
-| TP53 | 5 | 16 | 1402 | 4 | 80% | **5.6e-08** | **1e-4** |
+| PTEN | 39 | 97 | 883 | 2 | 5% | 0.94 | 0.94 |
+| CDKN2A | 12 | 48 | 1402 | 0 | 0% | 1 | 1 |
+| RB1 | 94 | 94 | 1360 | 13 | 14% | **0.0099** | **0.0091** |
+| TP53 | 61 | 16 | 1402 | 1 | 2% | 0.51 | 0.52 |
+
+**Only RB1 clears chance, and one target class carries it.** Removing AURKA and AURKB from the reference set
+leaves 6 of 69 recovered at p = 0.34. The defensible claim is that RB1-loss lines are selectively sensitive
+to Aurora kinase inhibitors, not that the window recovers RB1 biology broadly. Full per-target breakdown,
+misses, leave-one-class-out, threshold sweep and multiple-testing correction are generated into
+`SUPPL7_TABLE1_RB1.md` by `build_suppl7_table1.py`.
+
+**Three of four genotypes fail**, which is the evidence that the benchmark is not rigged: the same procedure
+that returns a positive for RB1 returns chance for PTEN, CDKN2A and TP53.
+
+## Superseded first pass — the 7-row starter set (illustrative only)
+
+**Do not quote these numbers.** Retained because the way this failed is the argument for the census above:
+TP53's p = 5.6e-08 came off five reference compounds that were essentially one target family, and collapsed
+to 1/61 at p = 0.51 once a real census was assembled. Source: `results/concordance_report.csv`.
+
+| genotype | reference (in universe) | candidates | universe | recovered | recovery | hypergeometric p | permutation p |
+|---|---|---|---|---|---|---|---|
+| RB1 | 49 | 94 | 1360 | 10 | 20% | 0.0013 | 0.0010 |
+| TP53 | 5 | 16 | 1402 | 4 | 80% | 5.6e-08 | 1e-4 |
 | PTEN | 10 | 97 | 883 | 2 | 20% | 0.30 | 0.30 |
 | CDKN2A | 0 | 48 | 1402 | 0 | n/a | — | — |
 

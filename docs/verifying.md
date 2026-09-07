@@ -171,8 +171,8 @@ Checkpoints to watch for while Tier 1 runs:
 | Candidates sit at the permutation null (RB1 marginal) | — | `run_all.py` -> `candidate_null.csv` | reproducible finding |
 | No gross general-sensitivity confound | — | `run_all.py` -> `line_centring.csv` | reproducible finding |
 | Lists thin sharply under bootstrap CI | — | `run_all.py` -> `bootstrap_ci_summary.csv` | reproducible finding |
-| RB1 loss -> Aurora dependency, recovered beyond chance (drug response) | Gong 2019 [L3], Oser 2019 [L4] | p = 0.0013 | **both legs — strongest claim here** |
-| TP53 -> KIF11 enrichment (drug response) | **none** | p = 5.6e-08, one seed row | computation only |
+| RB1 loss -> Aurora dependency, recovered beyond chance (drug response) | Gong 2019 [L3], Oser 2019 [L4] | p = 0.0099, blind census | **both legs — strongest claim here**; the enrichment is Aurora-carried (p = 0.34 without it), so the claim is Aurora-specific |
+| TP53 -> KIF11 enrichment (drug response) | **none** | p = 0.51 against the blind census; the p = 5.6e-08 seed figure is superseded | **not supported** — internal finding only, do not present as validated |
 | CDK4/6 WT-selective under RB1 loss (RNAi) | Michaud 2010 [L5] | q_two = 0.0081, `results/demeter_validation.csv` | **both legs** — prior art and a committed, obtained result |
 | RB–E2F axis + AKT1 mutant-selective under RB1 loss (RNAi) | — | q_two = 0.0081-0.0493, `results/demeter_validation.csv` | reproducible finding |
 | AURKA/AURKB dependency under RB1 loss (RNAi) | — | q_two = 0.5487 / 0.7789, not significant | tested, not supported by RNAi (Aurora's evidence is the drug-response row above) |

@@ -799,6 +799,23 @@ def main():
         f.write(doc)
     print(f"  wrote {out}")
 
+    # Robustness numbers as a committed CSV: docs/evidence.md, concordance/README.md and CLAUDE.md
+    # quote the leave-out figure in prose, and tests/test_docs_numbers.py pins that prose to this file.
+    rows = [dict(analysis="full", removed="", tested_removed=0, recovered_removed=0,
+                 ref_left=rob["full"][0], recovered_left=rob["full"][1], hyperg_p=rob["full"][2])]
+    for cls, dt, dr, kr, kk, kp in rob["classes"]:
+        rows.append(dict(analysis="drop_class", removed="+".join(cls), tested_removed=dt,
+                         recovered_removed=dr, ref_left=kr, recovered_left=kk, hyperg_p=kp))
+    if rob.get("aurora"):
+        at, ar, kr, kk, kp = rob["aurora"]
+        rows.append(dict(analysis="drop_aurora_pair", removed="AURKA+AURKB", tested_removed=at,
+                         recovered_removed=ar, ref_left=kr, recovered_left=kk, hyperg_p=kp))
+    rob_csv = os.path.join(os.path.dirname(a.results), f"robustness_{gene}.csv")
+    (pd.DataFrame(rows)
+       .sort_values(["analysis", "removed"], kind="stable")          # canonical, stable row order
+       .to_csv(rob_csv, index=False, float_format="%.12g"))
+    print(f"  wrote {rob_csv}")
+
 
 if __name__ == "__main__":
     main()

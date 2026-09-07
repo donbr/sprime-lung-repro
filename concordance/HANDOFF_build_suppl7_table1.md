@@ -28,6 +28,57 @@ available position, and it is what the old table could not say in principle.
 
 ---
 
+## 1b. Glossary — define these, they are half the "fuzzy picture"
+
+Nothing in this repo or the manuscript currently defines this vocabulary. **The manuscript's
+"Abbreviations" section is an empty stub** — it carries the heading and the sentence *"The following
+abbreviations are used in this manuscript:"* and then goes straight into REFERENCES. Filling it is an
+author task (§7). The emitted supplement must carry a trimmed reader-facing version of the table below,
+placed **before** the results, because a reader who does not hold *universe / recovered / miss /
+enrichment* cannot read the table at all.
+
+**The metric**
+| Term | Meaning |
+|---|---|
+| **S′** (S prime) | Signed potency–efficacy index for one compound in one cell line, `asinh((E_max/EC50)·κ)`, κ = 1 µM. Sign is kept: S′ > 0 net inhibition, S′ < 0 disinhibition. |
+| **pS′** | Cohort mean of S′ for a compound across the cell lines of one genotype cohort. |
+| **ΔpS′** | pS′(wild-type) − pS′(mutant). **More negative = more mutant-selective.** |
+| **4PL / E_max / EC50** | Four-parameter logistic curve and its amplitude/potency terms, the inputs S′ is computed from. |
+| **the window** (SL window) | The selection rule: pS′_WT > 0 **and** pS′_MUT > 0 **and** ΔpS′ ≤ −2. |
+| **candidate** | A compound that passes the window for a given genotype. |
+
+**The benchmark** (the terms that most need defining — they are new to this analysis)
+| Term | Meaning |
+|---|---|
+| **census / reference set** | The list of vulnerabilities compiled **from the literature**, frozen and hashed before any result was consulted. The thing the window is tested *against*. |
+| **blind** | Built without access to this repository or to any S′/pS′/ΔpS′ value. |
+| **directional census** | The **primary** 93-row set, excluding two rows whose sensitive genotype is RB1-*proficient*. The **full** 95-row set is reported as a sensitivity analysis. |
+| **universe** | Compounds measured in ≥3 wild-type **and** ≥3 mutant lines for that genotype — the testable pool. |
+| **reference-in-universe (R)** | Census compounds that are actually in the universe (the rest cannot be scored). |
+| **recovered (k)** | Reference-in-universe compounds the window also selected. |
+| **miss** | A reference compound that *was* tested but *not* selected. Misses are reported; a benchmark without them is not a benchmark. |
+| **recovery** | k / R. **Not** a sensitivity, and not an accuracy. |
+| **enrichment** | Whether k exceeds what a *random* window of the same size would recover. |
+| **hypergeometric p / permutation p** | The two ways enrichment is computed (closed form; 10,000 random draws). They agree here. |
+| **verification / validation** | See §1 — regenerates-identically vs beats-chance. |
+
+**Data sources and annotations**
+| Term | Meaning |
+|---|---|
+| **PRISM 19Q4** | Broad drug-repurposing viability screen; supplies the 4PL curve parameters (the compound library being searched). |
+| **DepMap 24Q2** | Broad damaging-mutation matrix; supplies genotype calls — **0 = wild-type, 2 = mutant, 1 = excluded**. |
+| **Chronos / gene effect** | CRISPR knockout dependency score (negative = more dependent). |
+| **DEMETER2** | RNAi knockdown dependency score. Used in Supplement 8, not here. |
+| **MOA** | Mechanism of action — the free-text annotation field used to expand a reference *target* to PRISM *compounds*. Sometimes wrong (see §4.4). |
+| **md5** | Checksum used to pin a frozen file so a later edit is detectable. |
+
+**Identifiers and tissue abbreviations used in the census**
+`CURIE` compact identifier (e.g. `SIDM:00903`) · `SIDM` Sanger cell-model ID · `CCLE` Broad cell-line ID ·
+`COSMIC` sample ID · `SCLC` small-cell lung cancer · `NSCLC` non-small-cell lung cancer ·
+`TNBC` triple-negative breast cancer · `HGSC` high-grade serous ovarian carcinoma · `PDX` patient-derived xenograft.
+
+---
+
 ## 2. Step zero — two blockers before anything runs
 
 **(a) The freeze step was never satisfied.** `PROTOCOL_literature_blind_concordance.md` Step 2 requires the
