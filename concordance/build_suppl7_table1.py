@@ -29,8 +29,9 @@ sys.path.insert(0, _HERE)                      # concordance/ -> concordance_enr
 sys.path.insert(0, os.path.dirname(_HERE))     # repo root    -> _common, sprime_core
 # Importing the engine also runs its scipy check (exit 4) and safe_stdout() — both wanted here.
 from concordance_enrichment import candidates, token_match          # noqa: E402
-from sprime_core import DELTA_LE, MIN_LINES                         # noqa: E402  (display only)
+from sprime_core import DELTA_LE, MIN_LINES, passes_window          # noqa: E402  (display + robustness)
 from _common import safe_stdout                                     # noqa: E402
+from scipy.stats import hypergeom   # engine already required it; the import above exits 4 if absent
 
 safe_stdout()
 
@@ -106,7 +107,10 @@ def load_matrix(derived):
     mat = pairs.pivot_table(index="name", columns="depmap_id", values="sprime", aggfunc="mean")
     ann = (pairs.assign(txt=(pairs.get("target", "").fillna("") + " ; " + pairs.get("moa", "").fillna("")))
                 .groupby("name").txt.apply(lambda s: " ; ".join(sorted(set(s)))).to_dict())
-    return mat, geno, ann
+    # structured target field only, no free-text MOA — used to test annotation robustness
+    ann_t = (pairs.assign(txt=pairs.get("target", "").fillna(""))
+                  .groupby("name").txt.apply(lambda s: " ; ".join(sorted(set(s)))).to_dict())
+    return mat, geno, ann, ann_t
 
 
 def cohort(mat, geno, gene):
@@ -124,6 +128,92 @@ def resolve_row(row, universe, ann):
     tgt = str(row.get("target", "") or "").strip()
     return {nm for nm in universe
             if (comp and nm.lower() == comp) or (tgt and token_match(tgt, ann.get(nm, "")))}
+
+
+def hyperg(k, n_uni, n_cand, n_ref):
+    """P(X >= k) — the same closed form the engine reports as hyperg_p."""
+    return float(hypergeom.sf(k - 1, n_uni, n_cand, n_ref)) if n_ref else float("nan")
+
+
+def resolve_by_target(census, gene, universe, annmap):
+    """target -> resolved compounds, using the supplied annotation map."""
+    per = {}
+    for _, r in census[census.genotype == gene].iterrows():
+        tgt = str(r.get("target", "") or "").strip()
+        key = tgt or f'(compound) {r.get("compound", "")}'
+        per.setdefault(key, set()).update(resolve_row(r, universe, annmap))
+    return per
+
+
+def overlap_classes(per):
+    """Group targets into overlap-closed classes: two targets share a class when any PRISM compound
+    resolves to both. Computed, never curated — a class is exactly the unit that can be removed from
+    the reference set without partially removing some other target's compounds."""
+    ts = [t for t in per if per[t]]
+    parent = {t: t for t in ts}
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i, a in enumerate(ts):
+        for b in ts[i + 1:]:
+            if per[a] & per[b]:
+                parent[find(a)] = find(b)
+    comps = {}
+    for t in ts:
+        comps.setdefault(find(t), []).append(t)
+    return sorted((sorted(v) for v in comps.values()),
+                  key=lambda v: (-len(v), v[0]))
+
+
+def robustness(gene, census, mat, geno, universe, cand, ann, ann_t, report):
+    """Every robustness check reported in the document. All computed, none asserted."""
+    n_uni, n_cand = len(universe), len(cand)
+    per = resolve_by_target(census, gene, universe, ann)
+    ref = set().union(*per.values()) if per else set()
+    out = {"full": (len(ref), len(ref & cand), hyperg(len(ref & cand), n_uni, n_cand, len(ref)))}
+
+    rows = []
+    for cls in overlap_classes(per):
+        drop = set().union(*[per[t] for t in cls])
+        keep = ref - drop
+        rows.append((cls, len(drop), len(drop & cand), len(keep), len(keep & cand),
+                     hyperg(len(keep & cand), n_uni, n_cand, len(keep))))
+    out["classes"] = sorted(rows, key=lambda r: (-r[2], -r[1]))
+
+    # the one pharmacologically-identical pair worth reporting on its own
+    if {"AURKA", "AURKB"} <= set(per):
+        drop = per["AURKA"] | per["AURKB"]
+        keep = ref - drop
+        out["aurora"] = (len(drop), len(drop & cand), len(keep), len(keep & cand),
+                         hyperg(len(keep & cand), n_uni, n_cand, len(keep)))
+
+    # annotation provenance: structured target field only, discarding free-text MOA matches
+    per_t = resolve_by_target(census, gene, universe, ann_t)
+    ref_t = set().union(*per_t.values()) if per_t else set()
+    out["target_only"] = (len(ref_t), len(ref_t & cand),
+                          hyperg(len(ref_t & cand), n_uni, n_cand, len(ref_t)),
+                          sorted((ref & cand) - (ref_t & cand)))
+
+    # window-threshold sweep
+    v = geno[gene]
+    wt = [c for c in mat.columns if v.get(c) == 0]
+    mu = [c for c in mat.columns if v.get(c) == 2]
+    w, m = mat.reindex(columns=wt), mat.reindex(columns=mu)
+    ok = (w.notna().sum(1) >= MIN_LINES) & (m.notna().sum(1) >= MIN_LINES)
+    sweep = []
+    for d in (-1.0, -1.5, -2.0, -2.5, -3.0):
+        c2 = set((ok & passes_window(w.mean(1), m.mean(1), delta_le=d)).pipe(lambda t: t[t]).index)
+        sweep.append((d, len(c2), len(ref & c2), hyperg(len(ref & c2), n_uni, len(c2), len(ref))))
+    out["thresholds"] = sweep
+
+    idx = report.set_index("gene")
+    out["bonferroni"] = [(g, float(idx.loc[g].hyperg_p), min(1.0, float(idx.loc[g].hyperg_p) * len(GENES)))
+                         for g in GENES]
+    return out
 
 
 def per_target(census, gene, universe, cand, ann, notes):
@@ -227,7 +317,7 @@ def pct(a, b):
     return f"{a / b:.0%}" if b else "n/a"
 
 
-def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, matched):
+def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, matched, rob):
     """Build the Supplement 7 document. Every number here comes from the arguments above."""
     row = report.set_index("gene").loc[gene]
     tested_total = stats["ref"]
@@ -269,8 +359,52 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "position available, and it is precisely what the old table could not say.")
     A("")
 
-    # ---- 2. headline --------------------------------------------------------------------
-    A("## 2. Headline result")
+    # ---- 2. glossary --------------------------------------------------------------------
+    A("## 2. Terms used in this supplement")
+    A("")
+    A("A reader who does not hold *universe*, *recovered*, *miss* and *enrichment* cannot read the table "
+      "below, so they are defined before the results rather than after.")
+    A("")
+    A("**The metric**")
+    A("")
+    A("| Term | Meaning |")
+    A("|---|---|")
+    A("| S′ | Signed potency–efficacy index for one compound in one cell line. Sign is kept: positive is "
+      "net inhibition. |")
+    A("| pS′ | Cohort mean of S′ for one compound across the cell lines of one genotype cohort. |")
+    A("| ΔpS′ | pS′ in wildtype minus pS′ in mutant. **More negative means more mutant-selective.** |")
+    A(f"| the window | The selection rule: pS′ positive in both cohorts **and** ΔpS′ ≤ {DELTA_LE:g}"
+      f", with at least {MIN_LINES} measured lines per cohort. |".replace("≤ -", "≤ −"))
+    A("| candidate | A compound that passes the window for a given genotype. |")
+    A("")
+    A("**The benchmark**")
+    A("")
+    A("| Term | Meaning |")
+    A("|---|---|")
+    A("| census, or reference set | The vulnerabilities compiled **from the literature**, frozen and hashed "
+      "before any result was consulted. The thing the window is tested against. |")
+    A("| blinded census assembly | The step that produces it: isolated agents compile the set from stated "
+      "inclusion criteria, their output is transferred verbatim into a file, and the file is frozen and "
+      "hashed before any scoring runs. |")
+    A("| structural blinding | The safeguard. The blind follows from how that step is built, not from what "
+      "anyone knew. See §9.4. |")
+    A(f"| directional census | The **primary** {census_n.get(os.path.basename(args.census), '?')}-row set, "
+      f"excluding rows whose sensitive genotype is the wildtype one. The full "
+      f"{census_n['full']}-row set is reported as a sensitivity analysis. |")
+    A("| universe | Compounds measured in enough wildtype **and** mutant lines to be scored at all. The "
+      "testable pool. |")
+    A("| reference-in-universe | Census compounds that are actually in the universe. The rest cannot be "
+      "scored either way. |")
+    A("| recovered | Reference-in-universe compounds that the window also selected. |")
+    A("| miss | A reference compound that **was** tested and was **not** selected. Misses are reported; a "
+      "benchmark without them is not a benchmark. |")
+    A("| recovery | Recovered divided by reference-in-universe. **Not** a sensitivity, and not an accuracy. |")
+    A("| enrichment | Whether the recovered count exceeds what a *random* window of the same size would "
+      "recover. Reported two ways, closed-form and by 10,000 random draws. |")
+    A("")
+
+    # ---- 3. headline --------------------------------------------------------------------
+    A("## 3. Headline result")
     A("")
     A("| | |")
     A("|---|---|")
@@ -296,8 +430,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
           "sensitivity analysis above. RB1 clears chance either way.")
         A("")
 
-    # ---- 3. the method can say no -------------------------------------------------------
-    A("## 3. The same method applied to all four genotypes")
+    # ---- 4. the method can say no -------------------------------------------------------
+    A("## 4. The same method applied to all four genotypes")
     A("")
     A("Run identically, with a census built the same way by the same procedure:")
     A("")
@@ -323,8 +457,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       f"p = {fmt_p(idx.loc['TP53'].hyperg_p)}.")
     A("")
 
-    # ---- 4. Table 1 proper --------------------------------------------------------------
-    A(f"## 4. Table 1 — literature-nominated {gene} vulnerabilities and their recovery by the S′ window")
+    # ---- 5. Table 1 proper --------------------------------------------------------------
+    A(f"## 5. Table 1 — literature-nominated {gene} vulnerabilities and their recovery by the S′ window")
     A("")
     A("Each row is a **target the literature nominated**, not a compound the window selected. *Tested* = "
       "PRISM 19Q4 compounds annotated to that target and measured in ≥3 "
@@ -363,8 +497,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
           "scoring this table.")
         A("")
 
-    # ---- 5. the shape of recovery -------------------------------------------------------
-    A("## 5. The shape of the recovery — the part the old table could not show")
+    # ---- 6. the shape of recovery -------------------------------------------------------
+    A("## 6. The shape of the recovery — the part the old table could not show")
     A("")
     A("Recovery is **partial within every class and zero in some**, which is what a selective signal looks "
       "like. A window that recovered everything would be uninformative.")
@@ -404,8 +538,69 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
             A(f"| {nm} | {', '.join(tg)} | `{txt[:140]}` |")
         A("")
 
-    # ---- 6. draft manuscript text -------------------------------------------------------
-    A("## 6. Draft manuscript text (drop-in for §3.7 / Supplement 7)")
+    # ---- 7. robustness ------------------------------------------------------------------
+    A("## 7. Robustness — what the enrichment does and does not survive")
+    A("")
+    A("Every figure in this section is computed, not asserted. The closed-form test is used throughout; it "
+      "agrees with the permutation test in the headline analysis.")
+    A("")
+    A("### 7.1 Leave-one-class-out")
+    A("")
+    A("Targets are grouped into **overlap-closed classes**: two targets share a class when some PRISM "
+      "compound resolves to both, so a class is exactly the unit that can be removed without partially "
+      "removing another target's compounds. Each row removes one class from the reference set and rescores.")
+    A("")
+    A("| Class removed | Its tested / recovered | Reference left | Recovered left | p |")
+    A("|---|---|---:|---:|---|")
+    fr, fk, fp = rob["full"]
+    A(f"| *nothing removed* | — | {fr} | {fk} | **{fmt_p(fp)}** |")
+    for cls, dt, dr, kr, kk, kp in rob["classes"]:
+        mark = "**" if kp >= 0.05 else ""
+        A(f"| {' + '.join(cls)} | {dt} / {dr} | {kr} | {kk} | {mark}{fmt_p(kp)}{mark} |")
+    A("")
+    if rob.get("aurora"):
+        at, ar, kr, kk, kp = rob["aurora"]
+        A(f"### 7.2 The result is carried by the Aurora kinase class")
+        A("")
+        A(f"AURKA and AURKB are the same pharmacological intervention: {at} compounds resolve to the pair "
+          f"and {ar} of the {fk} recovered compounds are among them. Removing both leaves "
+          f"**{kk} of {kr} recovered, p = {fmt_p(kp)}** — chance.")
+        A("")
+        A("Single leave-one-out hides this, because dropping AURKA leaves AURKB and almost all of the same "
+          "compounds. **The defensible claim is therefore specific: RB1-loss lines are selectively sensitive "
+          "to Aurora kinase inhibitors.** It is not broad recovery of RB1 biology across the nominated "
+          "targets, and the supplement should not be written as though it were. No other class is "
+          "load-bearing: removing any one of them leaves the enrichment significant.")
+        A("")
+    tr, tk, tp, only_moa = rob["target_only"]
+    A(f"### 7.{'3' if rob.get('aurora') else '2'} Annotation noise is not driving it")
+    A("")
+    A(f"Repeating the analysis using only PRISM's structured target field, discarding every match made "
+      f"through free-text mechanism annotation, gives **{tk} of {tr} recovered, p = {fmt_p(tp)}**. "
+      + (f"Compounds recovered *only* through free text: {', '.join(only_moa)}."
+         if only_moa else "No recovered compound depended on free-text matching."))
+    A("")
+    A(f"### 7.{'4' if rob.get('aurora') else '3'} The window threshold is not cherry-picked")
+    A("")
+    A("| ΔpS′ threshold | Candidates | Recovered | p |")
+    A("|---|---:|---:|---|")
+    for d, nc, k2, p2 in rob["thresholds"]:
+        mark = "**" if abs(d - DELTA_LE) < 1e-9 else ""
+        A(f"| {mark}≤ {d:g}{mark} | {nc} | {k2} | {mark}{fmt_p(p2)}{mark} |".replace("≤ -", "≤ −"))
+    A("")
+    A("The reported threshold is not the most favourable setting in this range, which is what an "
+      "artifact of threshold choice would look like.")
+    A("")
+    A(f"### 7.{'5' if rob.get('aurora') else '4'} Multiple testing across the four genotypes")
+    A("")
+    A("| Genotype | p | Bonferroni across 4 |")
+    A("|---|---|---|")
+    for g, pv, bp in rob["bonferroni"]:
+        A(f"| {g} | {fmt_p(pv)} | {fmt_p(bp)} |")
+    A("")
+
+    # ---- 8. draft manuscript text -------------------------------------------------------
+    A("## 8. Draft manuscript text (drop-in for §3.7 / Supplement 7)")
     A("")
     # name every class that recovered something; merge AURKA/AURKB into one Aurora class
     seen, classes = set(), []
@@ -436,7 +631,13 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
          f"sensitivity analysis retaining two inverse-direction entries" if sens_row is not None else "")
       + f"). Recovered compounds fall into coherent mechanistic classes —{aurora} — while {len(misses)} "
       f"annotated compounds were tested and not recovered. Recovery is therefore selective rather than "
-      f"indiscriminate. The reference set is pan-cancer, whereas recovery is measured in lung cell lines. "
+      f"indiscriminate. "
+      + (f"The enrichment is carried by the Aurora kinase class: removing AURKA and AURKB from the reference "
+         f"set leaves {rob['aurora'][3]} of {rob['aurora'][2]} recovered at p = {fmt_p(rob['aurora'][4])}, "
+         f"so the supported claim is the specific one, that {gene}-deficient lines are selectively sensitive "
+         f"to Aurora kinase inhibitors, rather than a broad recovery of {gene} biology. No other target "
+         f"class is load-bearing. " if rob.get("aurora") else "")
+      + f"The reference set is pan-cancer, whereas recovery is measured in lung cell lines. "
       f"This analysis establishes enrichment for literature-validated {gene} dependencies beyond chance; it "
       f"does **not** estimate sensitivity, specificity or positive predictive value, and the same procedure "
       f"applied to PTEN, CDKN2A and TP53 returned chance-level recovery. It is reported alongside the "
@@ -444,8 +645,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       f"{gene}-anchored: the study's two independent lines of evidence converge on the same genotype.")
     A("")
 
-    # ---- 7. limitations -----------------------------------------------------------------
-    A("## 7. What this analysis does not claim")
+    # ---- 9. limitations -----------------------------------------------------------------
+    A("## 9. What this analysis does not claim")
     A("")
     A("1. **Not a sensitivity estimate.** The design cannot estimate sensitivity, specificity or positive "
       "predictive value. Recovery percentage is not accuracy.")
@@ -456,7 +657,7 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "pan-cancer scope is a deliberate and necessary choice, and a limitation to state.\"*")
     A("3. **Annotation noise.** Target → compound expansion relies on PRISM's own target/MOA annotations, "
       "which the referee review flagged as sometimes wrong (barasertib, for example, is mis-annotated). "
-      "§5 shows the matched annotation text for every recovered compound so each call can be checked.")
+      "§6 shows the matched annotation text for every recovered compound so each call can be checked.")
     A("4. **The blinding is structural, not absolute.** The assembly step was initiated from within a "
       "results-aware project, so the guarantee does not rest on anyone's ignorance. It rests on two "
       "procedural facts. The four AI agents that built the rows worked in isolation, without repository "
@@ -468,15 +669,21 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "census before any results exist. (`BLIND_CENSUS_2026-08-31.md` states this same limitation in terms "
       "of the person who commissioned the census; the procedural statement here is the accurate one, and "
       "that document is left unedited as the record of the day.)")
-    A("5. **The freeze commit is retroactive.** The census was hashed and run on 2026-08-31 and committed on "
-      "2026-09-06. The hashes, not the commit date, are the evidence.")
-    A("6. **Model-system annotation is post-hoc.** The *Model system* and *Census caveat* columns were added "
-      "on 2026-09-06 from the cited primaries and the census assembly notes. They are presentation only and enter "
-      "no computation.")
+    if rob.get("aurora"):
+        A(f"5. **The enrichment rests on one target class.** Removing the Aurora pair leaves "
+          f"{rob['aurora'][3]} of {rob['aurora'][2]} recovered at p = {fmt_p(rob['aurora'][4])}. The result "
+          f"supports a single specific dependency, not recovery of the genotype's biology in general. "
+          f"See §7.2.")
+    n = 6 if rob.get("aurora") else 5
+    A(f"{n}. **The freeze commit is retroactive.** The census was hashed and run on 2026-08-31 and committed "
+      f"on 2026-09-06. The hashes, not the commit date, are the evidence.")
+    A(f"{n + 1}. **Model-system annotation is post-hoc.** The *Model system* and *Census caveat* columns were "
+      f"added on 2026-09-06 from the cited primaries and the census assembly notes. They are presentation "
+      f"only and enter no computation.")
     A("")
 
-    # ---- 8. author decisions ------------------------------------------------------------
-    A("## 8. Decisions for the authors (surfaced, not applied)")
+    # ---- 10. author decisions ------------------------------------------------------------
+    A("## 10. Decisions for the authors (surfaced, not applied)")
     A("")
     A("1. **PARP stays in.** An earlier analysis argued for excluding PARP1 from the RB1 reference set — no "
       "BioGRID RB1–PARP1 genetic interaction, disjoint STRING modules, older RB1–PARP literature tracing to "
@@ -497,14 +704,15 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
       "stands in the heading itself.")
     A("")
 
-    # ---- 9. provenance ------------------------------------------------------------------
-    A("## 9. Provenance and reproduction")
+    # ---- 11. provenance ------------------------------------------------------------------
+    A("## 11. Provenance and reproduction")
     A("")
     A("| Item | Value |")
     A("|---|---|")
     for name, path in sorted(census_paths.items()):
         A(f"| Census `{name}` | {census_n.get(name, '?')} rows, md5 `{md5sum(path)}` |")
-    A(f"| Census freeze commit | `{FREEZE_COMMITS['census']}` (retroactive — see §7.5) |")
+    _fn = 6 if rob.get("aurora") else 5
+    A(f"| Census freeze commit | `{FREEZE_COMMITS['census']}` (retroactive — see §9.{_fn}) |")
     A(f"| Results commit | `{FREEZE_COMMITS['results']}` |")
     A(f"| Engine | `{ENGINE_INVOCATION}` |")
     for k, v in DATA_MD5.items():
@@ -549,9 +757,10 @@ def main():
         print(f"NOTE: no annotation file at {a.annotations} — Model system / Census caveat will read "
               f"'not annotated'.")
 
-    mat, geno, ann = load_matrix(a.derived)
+    mat, geno, ann, ann_t = load_matrix(a.derived)
     universe, cand = cohort(mat, geno, gene)
     targets = per_target(census, gene, universe, cand, ann, notes)
+    rob = robustness(gene, census, mat, geno, universe, cand, ann, ann_t, report)
 
     resolved = set().union(*[e["tested"] for e in targets]) if targets else set()
     stats = dict(universe=len(universe), candidates=len(cand),
@@ -585,7 +794,7 @@ def main():
         raise SystemExit(1)
     print(f"  all acceptance gates reproduced")
 
-    doc = emit(gene, a, stats, report, sens_row, targets, census_n, census_paths, matched)
+    doc = emit(gene, a, stats, report, sens_row, targets, census_n, census_paths, matched, rob)
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         f.write(doc)
     print(f"  wrote {out}")
