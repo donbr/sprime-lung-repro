@@ -179,6 +179,14 @@ the leave-one-class-out sweep, a threshold sweep, and the Bonferroni correction 
 That three of four genotypes fail is the point, not a disappointment: the same procedure that returns a
 positive for RB1 returns chance elsewhere, which is what distinguishes this from the circular version.
 
+**A second blinded census, assembled 2026-09-06 by different agents, replicates all four outcomes.**
+Against a rule pre-specified and committed before that census existed — a genotype is claimable only if it
+clears chance in both censuses — RB1 clears again at 13/73, p = 0.00097, while PTEN, CDKN2A and TP53 are
+concordant negatives. The Aurora class carries the enrichment in both, and **the two censuses recover
+exactly the same 13 compounds** despite sharing only 16 of their roughly 20 RB1 targets. Agreement between
+the censuses is moderate (Jaccard 0.39 to 0.70 on targets), so a single census is a noisier instrument than
+its frozen presentation suggests. Full report in `concordance/RESULT_second_census_2026-09-06.md`.
+
 ### The superseded first pass — the 7-row starter set
 
 **Superseded.** The table below was computed against `concordance/reference_seed_grounded.csv`, a 7-row

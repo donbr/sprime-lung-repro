@@ -42,6 +42,12 @@ to Aurora kinase inhibitors, not that the window recovers RB1 biology broadly. F
 misses, leave-one-class-out, threshold sweep and multiple-testing correction are generated into
 `SUPPL7_TABLE1_RB1.md` by `build_suppl7_table1.py`.
 
+**RB1 replicated in a second blinded census (2026-09-06):** 13/73 at p = 0.00097, against a rule
+pre-specified before that census existed, with the Aurora class carrying it in both and **the same 13
+compounds recovered in both**. PTEN, CDKN2A and TP53 are concordant negatives. Census agreement is only
+moderate (Jaccard 0.39 to 0.70 on targets), which is itself a finding about how noisy a single census is.
+See `RESULT_second_census_2026-09-06.md` and `PRESPEC_second_census_2026-09-06.md`.
+
 **Three of four genotypes fail**, which is the evidence that the benchmark is not rigged: the same procedure
 that returns a positive for RB1 returns chance for PTEN, CDKN2A and TP53.
 

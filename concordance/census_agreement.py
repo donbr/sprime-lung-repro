@@ -120,9 +120,10 @@ def main():
               f"{len(ca):>7}{len(cb):>7}{len(ca & cb):>6}{jaccard(ca, cb):>8.3f}")
 
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
-    (pd.DataFrame(rows)
-       .sort_values("gene", kind="stable")
-       .to_csv(a.out, index=False, float_format="%.12g"))
+    # canonical row order is GENES, matching every other reported CSV in the repo — not alphabetical
+    out_df = pd.DataFrame(rows)
+    out_df["gene"] = pd.Categorical(out_df["gene"], categories=GENES, ordered=True)
+    out_df.sort_values("gene", kind="stable").to_csv(a.out, index=False, float_format="%.12g")
     print(f"\nwrote {a.out}")
     print("\nRead low agreement as a finding about the census, not about the window: it would mean a\n"
           "single census is too thin an instrument to validate against.")

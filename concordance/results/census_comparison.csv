@@ -1,0 +1,5 @@
+gene,ref_a,recovered_a,hyperg_p_a,perm_p_a,clears_a,ref_b,recovered_b,hyperg_p_b,perm_p_b,clears_b,verdict
+PTEN,39,2,0.94180453779,0.937306269373,False,71,3,0.990053779789,0.989801019898,False,concordant negative
+CDKN2A,12,0,1,1,False,15,0,1,1,False,concordant negative
+RB1,94,13,0.00987648640793,0.00909909009099,True,73,13,0.000967765305098,0.000399960004,True,CLAIMABLE
+TP53,61,1,0.511135535274,0.521847815218,False,38,0,1,1,False,concordant negative

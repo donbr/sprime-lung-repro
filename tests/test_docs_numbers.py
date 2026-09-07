@@ -179,6 +179,29 @@ def test_verifying_claim_table():
         _assert_in(doc, f"p = {df.loc[gene].hyperg_p:.2g}", "docs/verifying.md", BLIND)
 
 
+def test_second_census_verdicts():
+    """The pre-specified both-must-clear verdicts must match what the comparison actually computed.
+
+    Guards the strongest claim in the repo: that RB1 replicated across two independently assembled
+    censuses. If a rerun ever changes a verdict, this fails rather than letting the prose stand.
+    """
+    df = _read("concordance/results/census_comparison.csv")
+    _assert_one_row_per_gene(df, "concordance/results/census_comparison.csv")
+    expected = {"PTEN": "concordant negative", "CDKN2A": "concordant negative",
+                "RB1": "CLAIMABLE", "TP53": "concordant negative"}
+    for r in df.itertuples():
+        assert r.verdict == expected[r.gene], (
+            f"census_comparison.csv reports {r.gene} as {r.verdict!r}, expected "
+            f"{expected[r.gene]!r}. The pre-specified rule in "
+            f"concordance/PRESPEC_second_census_2026-09-06.md returned a different answer than the "
+            f"documents claim — update the documents, and do not change the rule."
+        )
+    rb1 = df.set_index("gene").loc["RB1"]
+    for path in ("CLAUDE.md", "concordance/README.md", "docs/evidence.md"):
+        _assert_in(_doc(path), f"p = {rb1.hyperg_p_b:.2g}".replace("p = ", ""), path,
+                   "concordance/results/census_comparison.csv (census-2 RB1 p)")
+
+
 def test_aurora_leave_out_quoted_everywhere():
     """The Aurora leave-out figure is quoted in three documents; pin all three to the CSV.
 

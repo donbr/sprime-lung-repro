@@ -21,7 +21,7 @@ they must change.
 
 | Review issue | What it demands | Implementation | Committed result |
 |---|---|---|---|
-| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0099 (Aurora-carried; 0.34 without it), PTEN p=0.94, CDKN2A p=1, TP53 p=0.51 |
+| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0099, replicated at p=0.00097 in a second blind census; PTEN/CDKN2A/TP53 concordant negatives |
 | B2 no null model | candidate sizes, permutation FDR, bootstrap gate | `blocking_analyses.py` §1, `bootstrap_ci_gate.py` | 97/48/94/16; FDR 1.00/0.87/0.68/1.27; survivors 26/3/16/1 |
 | B3 sensitivity confound | per-line median S′ split by genotype | `blocking_analyses.py` §2 | offsets −0.02 to −0.13, corr 0.996–1.000 |
 | B4 worked example wrong | recompute to S′ ≈ 6.70 | `sprime_pipeline.py` anchor, `test_sprime_worked_example` | 6.704 |
@@ -197,7 +197,15 @@ It imports `candidates` and `token_match` from `concordance_enrichment.py` rathe
 window — do not reintroduce a local `-2` or `MINN = 3` there either — and it fails closed, exiting 1 without
 writing if any acceptance gate stops reproducing.
 
-**The RB1 result is Aurora-carried.** Removing AURKA and AURKB from the reference set leaves
-6 of 69 recovered at p = 0.34 (`concordance/results/2026-08-31_blind/robustness_RB1.csv`). Any claim
-built on this benchmark must be Aurora-specific; §7 of the generated supplement holds the
-leave-one-class-out, threshold and multiple-testing sweeps.
+**The RB1 result is Aurora-carried, and that is stable across two censuses.** Removing AURKA and AURKB
+leaves 6 of 69 recovered at p = 0.34 (`concordance/results/2026-08-31_blind/robustness_RB1.csv`); the
+2026-09-06 census gives 6 of 48 at p = 0.11. Any claim built on this benchmark must be Aurora-specific;
+§7 of the generated supplement holds the leave-one-class-out, threshold and multiple-testing sweeps.
+
+**A second blinded census was run on 2026-09-06 and RB1 replicated.** The rule was pre-specified in
+`PRESPEC_second_census_2026-09-06.md` and committed before the census existed: a genotype is claimable
+only if it clears chance in **both** censuses. RB1 does, 13/94 at p=0.0099 and 13/73 at p=0.00097, and
+**both censuses recover exactly the same 13 compounds**. PTEN, CDKN2A and TP53 are concordant negatives.
+Census agreement is moderate — Jaccard 0.39 to 0.70 on targets — so a single census is a noisier
+instrument than its frozen presentation suggests. See `RESULT_second_census_2026-09-06.md`. Do not pool
+the two censuses; the pre-specification forbids it.
