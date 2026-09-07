@@ -123,7 +123,7 @@ def main():
     # canonical row order is GENES, matching every other reported CSV in the repo — not alphabetical
     out_df = pd.DataFrame(rows)
     out_df["gene"] = pd.Categorical(out_df["gene"], categories=GENES, ordered=True)
-    out_df.sort_values("gene", kind="stable").to_csv(a.out, index=False, float_format="%.12g")
+    out_df.sort_values("gene", kind="stable").to_csv(a.out, index=False, float_format="%.12g", lineterminator="\n")
     print(f"\nwrote {a.out}")
     print("\nRead low agreement as a finding about the census, not about the window: it would mean a\n"
           "single census is too thin an instrument to validate against.")

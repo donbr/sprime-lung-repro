@@ -88,7 +88,7 @@ python3 run_all.py             # sprime_pipeline.py, then blocking_analyses.py, 
 Optionally, after `run_all.py`:
 
 ```bash
-python3 concordance/concordance_enrichment.py --reference concordance/reference_seed_grounded.csv
+python3 concordance/concordance_enrichment.py \n    --reference concordance/reference_set_2026-08-31_directional.csv \n    --out concordance/results/2026-08-31_blind --perm 10000
 python3 demeter_validation.py                                    # needs the optional DEMETER2 input
 ```
 

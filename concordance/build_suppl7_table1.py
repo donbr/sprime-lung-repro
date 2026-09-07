@@ -21,7 +21,7 @@ Usage:
     uv run --locked python concordance/build_suppl7_table1.py                 # RB1 (default)
     uv run --locked python concordance/build_suppl7_table1.py --genotype TP53
 """
-import argparse, hashlib, os, sys
+import argparse, hashlib, math, os, sys
 import pandas as pd
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -263,16 +263,26 @@ def check(label, got, want, failures, tol=None):
 
 def verify(gene, stats, report_row, sens_row, targets, census_paths, failures):
     """Assert every acceptance gate. Appends human-readable deltas to `failures`."""
-    for name, want in CENSUS_MD5.items():
-        p = census_paths.get(name)
-        if p:
-            check(f"census md5 {name}", md5sum(p), want, failures)
+    # Iterate the censuses ACTUALLY used, not the pinned list: keying on the pinned names let an
+    # unpinned --census skip the hash check entirely, which is the only gate that catches an edit to
+    # a provenance field (PMID, search_terms, rationale) that changes no computed number.
+    for name, path in census_paths.items():
+        want = CENSUS_MD5.get(name)
+        if want is None:
+            failures.append(f"census {name} has no pinned md5 in CENSUS_MD5 — refusing to certify a "
+                            f"census this generator cannot verify")
+        else:
+            check(f"census md5 {name}", md5sum(path), want, failures)
 
     # 1. the recomputed cohort must reproduce the engine's own committed output
     check(f"{gene} universe (recomputed vs report)", stats["universe"], int(report_row.universe), failures)
     check(f"{gene} candidates (recomputed vs report)", stats["candidates"], int(report_row.candidates), failures)
     check(f"{gene} ref_in_universe (recomputed vs report)", stats["ref"], int(report_row.ref_in_universe), failures)
     check(f"{gene} recovered (recomputed vs report)", stats["recovered"], int(report_row.recovered), failures)
+
+    # the miss list is the only number in the document parsed out of a string rather than computed
+    check(f"{gene} misses count", len(str(report_row.misses).split(";")) if isinstance(report_row.misses, str)
+          and report_row.misses else 0, stats["ref"] - stats["recovered"], failures)
 
     # 2. the committed report must match the handoff's frozen gates
     if gene in GATES_PRIMARY:
@@ -310,6 +320,8 @@ def verify(gene, stats, report_row, sens_row, targets, census_paths, failures):
 
 def fmt_p(x):
     x = float(x)
+    if not math.isfinite(x):
+        return "n/a"          # an empty reference set after a leave-one-out, not a p-value of nan
     return "1" if x >= 1 else f"{x:.3g}"
 
 
@@ -409,8 +421,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
     A("| | |")
     A("|---|---|")
     A(f"| Reference compounds tested in the {gene} cohort | **{tested_total}** |")
-    A(f"| Recovered by the window (pS′<sub>WT</sub> > 0, pS′<sub>MUT</sub> > 0, ΔpS′ ≤ −2) | "
-      f"**{rec_total} ({pct(rec_total, tested_total)})** |")
+    A((f"| Recovered by the window (pS′<sub>WT</sub> > 0, pS′<sub>MUT</sub> > 0, ΔpS′ ≤ {DELTA_LE:g}) | "
+       f"**{rec_total} ({pct(rec_total, tested_total)})** |").replace("≤ -", "≤ −"))
     A(f"| Missed | **{len(misses)}** |")
     A(f"| Tested universe / candidates passing the window | {int(row.universe)} / {int(row.candidates)} |")
     A(f"| Hypergeometric p | **{fmt_p(row.hyperg_p)}** |")
@@ -461,8 +473,8 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
     A(f"## 5. Table 1 — literature-nominated {gene} vulnerabilities and their recovery by the S′ window")
     A("")
     A("Each row is a **target the literature nominated**, not a compound the window selected. *Tested* = "
-      "PRISM 19Q4 compounds annotated to that target and measured in ≥3 "
-      f"{gene}-wildtype and ≥3 {gene}-mutant lung lines. **Targets overlap** — a pan-Aurora compound is "
+      "PRISM 19Q4 compounds annotated to that target and measured in "
+      f"≥{MIN_LINES} {gene}-wildtype and ≥{MIN_LINES} {gene}-mutant lung lines. **Targets overlap** — a pan-Aurora compound is "
       "annotated to both AURKA and AURKB — so the column does **not** sum; the union is the headline.")
     A("")
     A("| Reference target | Evidence (PMID) | Model system | Tested | Recovered | Recovered compounds | Census caveat |")
@@ -617,32 +629,50 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
             classes.append(f"{e['target']} ({', '.join(sorted(rest))})")
             seen |= rest
     aurora = (" " + "; ".join(classes)) if classes else " none"
-    A(f"> To test whether the S′ selection window recovers established {gene} biology, a reference set of "
-      f"{gene}-selective vulnerabilities was compiled from the published literature under **structural "
-      f"blinding**. In this blinded census assembly, four isolated AI agents, one per genotype, worked from "
-      f"stated inclusion criteria without access to the analysis repository and without sight of any S′, pS′ "
-      f"or ΔpS′ value; their output was transferred verbatim into the reference file, which was then frozen "
-      f"and checksum-verified before the benchmark was run. Of {tested_total} PRISM compounds "
-      f"annotated to these literature-nominated targets and measured in the {gene} cohort "
-      f"(≥3 wildtype and ≥3 mutant lung lines), the window recovered {rec_total} "
-      f"({pct(rec_total, tested_total)}; hypergeometric p = {fmt_p(row.hyperg_p)}, "
-      f"10,000-permutation p = {fmt_p(row.perm_p)}"
-      + (f"; {int(sens_row.recovered)}/{int(sens_row.ref_in_universe)}, p = {fmt_p(sens_row.hyperg_p)} in a "
-         f"sensitivity analysis retaining two inverse-direction entries" if sens_row is not None else "")
-      + f"). Recovered compounds fall into coherent mechanistic classes —{aurora} — while {len(misses)} "
-      f"annotated compounds were tested and not recovered. Recovery is therefore selective rather than "
-      f"indiscriminate. "
-      + (f"The enrichment is carried by the Aurora kinase class: removing AURKA and AURKB from the reference "
-         f"set leaves {rob['aurora'][3]} of {rob['aurora'][2]} recovered at p = {fmt_p(rob['aurora'][4])}, "
-         f"so the supported claim is the specific one, that {gene}-deficient lines are selectively sensitive "
-         f"to Aurora kinase inhibitors, rather than a broad recovery of {gene} biology. No other target "
-         f"class is load-bearing. " if rob.get("aurora") else "")
-      + f"The reference set is pan-cancer, whereas recovery is measured in lung cell lines. "
-      f"This analysis establishes enrichment for literature-validated {gene} dependencies beyond chance; it "
-      f"does **not** estimate sensitivity, specificity or positive predictive value, and the same procedure "
-      f"applied to PTEN, CDKN2A and TP53 returned chance-level recovery. It is reported alongside the "
-      f"orthogonal genetic-dependency evidence in Supplement 8 (RNAi/CRISPR, RB–E2F axis), which is also "
-      f"{gene}-anchored: the study's two independent lines of evidence converge on the same genotype.")
+    cleared = float(row.hyperg_p) < 0.05 and float(row.perm_p) < 0.05
+    others = [g for g in GENES if g != gene]
+    sens = (f"; {int(sens_row.recovered)}/{int(sens_row.ref_in_universe)}, "
+            f"p = {fmt_p(sens_row.hyperg_p)} in a sensitivity analysis retaining the "
+            f"{census_n['full'] - census_n[os.path.basename(args.census)]} inverse-direction entries"
+            if sens_row is not None else "")
+    head = (f"> To test whether the S′ selection window recovers established {gene} biology, a reference set "
+            f"of {gene}-selective vulnerabilities was compiled from the published literature under "
+            f"**structural blinding**. In this blinded census assembly, four isolated AI agents, one per "
+            f"genotype, worked from stated inclusion criteria without access to the analysis repository and "
+            f"without sight of any S′, pS′ or ΔpS′ value; their output was transferred verbatim into the "
+            f"reference file, which was then frozen and checksum-verified before the benchmark was run. Of "
+            f"{tested_total} PRISM compounds annotated to these literature-nominated targets and measured in "
+            f"the {gene} cohort (≥{MIN_LINES} wildtype and ≥{MIN_LINES} mutant lung lines), the window "
+            f"recovered {rec_total} ({pct(rec_total, tested_total)}; hypergeometric p = "
+            f"{fmt_p(row.hyperg_p)}, 10,000-permutation p = {fmt_p(row.perm_p)}{sens}). ")
+    if not cleared:
+        # A non-clearing genotype must never be handed to an author as though it validated anything.
+        A(head
+          + f"**Recovery is at chance.** The window does not recover literature-nominated {gene} biology in "
+          f"this dataset, and this analysis provides no validation for {gene}. The reference set is "
+          f"pan-cancer whereas recovery is measured in lung cell lines, and recovery is not a sensitivity "
+          f"estimate; but neither caveat is needed to read this result, which is simply negative. "
+          + (f"Of the nominated targets, {len(zero)} resolved to no compound in the PRISM 19Q4 library and "
+             f"could not be tested at all — a dataset boundary rather than a negative result. " if zero else "")
+          + f"A negative here is informative: the same procedure returns a significant result for RB1, so "
+          f"the benchmark is capable of detecting recovery when it is present.")
+    else:
+        A(head
+          + f"Recovered compounds fall into coherent mechanistic classes —{aurora} — while {len(misses)} "
+          f"annotated compounds were tested and not recovered, so recovery is selective rather than "
+          f"indiscriminate. "
+          + (f"The enrichment is carried by the Aurora kinase class: removing AURKA and AURKB from the "
+             f"reference set leaves {rob['aurora'][3]} of {rob['aurora'][2]} recovered at "
+             f"p = {fmt_p(rob['aurora'][4])}, so the supported claim is the specific one, that "
+             f"{gene}-deficient lines are selectively sensitive to Aurora kinase inhibitors, rather than a "
+             f"broad recovery of {gene} biology. " if rob.get("aurora") else "")
+          + f"The reference set is pan-cancer, whereas recovery is measured in lung cell lines. This "
+          f"analysis establishes enrichment for literature-nominated {gene} dependencies beyond chance; it "
+          f"does **not** estimate sensitivity, specificity or positive predictive value, and the same "
+          f"procedure applied to {', '.join(others)} returned chance-level recovery."
+          + (f" It is reported alongside the orthogonal genetic-dependency evidence in Supplement 8 "
+             f"(RNAi/CRISPR, RB–E2F axis), which is also {gene}-anchored: the study's two independent lines "
+             f"of evidence converge on the same genotype." if gene == "RB1" else ""))
     A("")
 
     # ---- 9. limitations -----------------------------------------------------------------
@@ -651,7 +681,7 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
     A("1. **Not a sensitivity estimate.** The design cannot estimate sensitivity, specificity or positive "
       "predictive value. Recovery percentage is not accuracy.")
     A("2. **Pan-cancer reference, lung measurement.** The census draws on SCLC, breast/TNBC, prostate, "
-      "hepatocellular, retinoblastoma, ovarian and bladder models; recovery is measured in lung lines. "
+          "hepatocellular, retinoblastoma, ovarian and bladder models; recovery is measured in lung lines. "
       "The census records why: *\"Lung-specific primary evidence is scarce for PTEN and CDKN2A and "
       "moderate for RB1 and TP53. A lung-restricted census would have been too small to test; the "
       "pan-cancer scope is a deliberate and necessary choice, and a limitation to state.\"*")
@@ -685,23 +715,28 @@ def emit(gene, args, stats, report, sens_row, targets, census_n, census_paths, m
     # ---- 10. author decisions ------------------------------------------------------------
     A("## 10. Decisions for the authors (surfaced, not applied)")
     A("")
-    A("1. **PARP stays in.** An earlier analysis argued for excluding PARP1 from the RB1 reference set — no "
-      "BioGRID RB1–PARP1 genetic interaction, disjoint STRING modules, older RB1–PARP literature tracing to "
-      "co-deleted RNASEH2B/BRCA2. That was wrong. The blind census cites PMID 42618565, a 2026 isogenic "
-      "hepatocellular screen showing biallelic RB1-inactivated cells are selectively PARP-sensitive, and "
-      "olaparib and niraparib are 2 of the 13 recovered. Keep PARP, cite 42618565, drop the "
+    if gene != "RB1":
+        A(f"The decisions below concern the RB1 arm, which is the only genotype with a positive result. "
+          f"For {gene} the only decision is not to claim validation. See `SUPPL7_TABLE1_RB1.md`.")
+        A("")
+    if gene == "RB1":
+        A("1. **PARP stays in.** An earlier analysis argued for excluding PARP1 from the RB1 reference set — no "
+          "BioGRID RB1–PARP1 genetic interaction, disjoint STRING modules, older RB1–PARP literature tracing to "
+          "co-deleted RNASEH2B/BRCA2. That was wrong. The blind census cites PMID 42618565, a 2026 isogenic "
+          "hepatocellular screen showing biallelic RB1-inactivated cells are selectively PARP-sensitive, and "
+          "olaparib and niraparib are 2 of the 13 recovered. Keep PARP, cite 42618565, drop the "
       "\"context-dependent\" footnote.")
-    A("2. **Delete a fabricated citation.** Table 1 currently cites *\"Jansen VM, Bhatt DL, Maniaci J, et "
-      "al., Cancer Discov 2017\"* on the AURKB row. No such paper exists. Oser 2019 (PMID 30373918) carries "
-      "that row; Gong 2019 (PMID 30373917) is the real Aurora-A paper.")
-    A("3. **De-claim TP53–KIF11** in Table 4 and the abstract. Present it as a novel internal finding of "
-      "this dataset, explicitly **not** literature-validated.")
-    A("4. **Retire the 75–94% recovery figures** in the abstract, §3.7 and §4, along with §4's \"confirming "
-      "the accuracy and biological specificity of the S′ index.\" Claim validation for RB1 only, paired "
-      "with Supplement 8.")
-    A("5. **Change the table title.** *\"Literature-Corroborated Candidate Vulnerabilities Identified in "
-      "Pharmacologic Screens\"* describes the old direction; if it survives, the circularity objection "
-      "stands in the heading itself.")
+        A("2. **Delete a fabricated citation.** Table 1 currently cites *\"Jansen VM, Bhatt DL, Maniaci J, et "
+          "al., Cancer Discov 2017\"* on the AURKB row. No such paper exists. Oser 2019 (PMID 30373918) carries "
+          "that row; Gong 2019 (PMID 30373917) is the real Aurora-A paper.")
+        A("3. **De-claim TP53–KIF11** in Table 4 and the abstract. Present it as a novel internal finding of "
+          "this dataset, explicitly **not** literature-validated.")
+        A("4. **Retire the 75–94% recovery figures** in the abstract, §3.7 and §4, along with §4's \"confirming "
+          "the accuracy and biological specificity of the S′ index.\" Claim validation for RB1 only, paired "
+          "with Supplement 8.")
+        A("5. **Change the table title.** *\"Literature-Corroborated Candidate Vulnerabilities Identified in "
+          "Pharmacologic Screens\"* describes the old direction; if it survives, the circularity objection "
+          "stands in the heading itself.")
     A("")
 
     # ---- 11. provenance ------------------------------------------------------------------
@@ -813,7 +848,7 @@ def main():
     rob_csv = os.path.join(os.path.dirname(a.results), f"robustness_{gene}.csv")
     (pd.DataFrame(rows)
        .sort_values(["analysis", "removed"], kind="stable")          # canonical, stable row order
-       .to_csv(rob_csv, index=False, float_format="%.12g"))
+       .to_csv(rob_csv, index=False, float_format="%.12g", lineterminator="\n"))
     print(f"  wrote {rob_csv}")
 
 

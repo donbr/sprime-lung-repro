@@ -21,9 +21,9 @@ they must change.
 
 | Review issue | What it demands | Implementation | Committed result |
 |---|---|---|---|
-| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0099, replicated at p=0.00097 in a second blind census; PTEN/CDKN2A/TP53 concordant negatives |
+| B1 concordance is circular | blind reference set, report misses, enrichment p | `concordance/` | RB1 p=0.0099 (replicated at p=0.00097 in a second blind census), PTEN p=0.94, CDKN2A p=1, TP53 p=0.51 — three concordant negatives |
 | B2 no null model | candidate sizes, permutation FDR, bootstrap gate | `blocking_analyses.py` §1, `bootstrap_ci_gate.py` | 97/48/94/16; FDR 1.00/0.87/0.68/1.27; survivors 26/3/16/1 |
-| B3 sensitivity confound | per-line median S′ split by genotype | `blocking_analyses.py` §2 | offsets −0.02 to −0.13, corr 0.996–1.000 |
+| B3 sensitivity confound | per-line median S′ split by genotype | `blocking_analyses.py` §2 | offsets −0.13 to +0.07, corr 0.996–1.000 |
 | B4 worked example wrong | recompute to S′ ≈ 6.70 | `sprime_pipeline.py` anchor, `test_sprime_worked_example` | 6.704 |
 | M3 fold-change claim | ΔpS′ ≤ −2 *is* ≈7.4-fold | `sprime_core.fold_change`, `test_fold_change_converges` | e² = 7.389 |
 | M9 RNAi reframing | emit two-sided + WT-direction q-values | `demeter_validation.py` | added in `01425ea` |

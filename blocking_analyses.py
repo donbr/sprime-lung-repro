@@ -66,7 +66,7 @@ def main():
     # %.12g: reported floats are written at a fixed precision so the file does not vary with the
     # BLAS build. np.corrcoef below differs in the last ULP between numpy builds, which is invisible
     # at any precision we display but would otherwise make a cited CSV fail a byte-for-byte diff.
-    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False,
+    pd.DataFrame(rows).to_csv(os.path.join(a.out, "candidate_null.csv"), index=False, lineterminator="\n",
                               float_format="%.12g")
     log("  Only genotypes with perm_FDR well below ~0.5 carry signal beyond chance.\n")
 
@@ -85,14 +85,15 @@ def main():
         rows2.append(dict(gene=g, offset_mut_minus_wt=mum - wtm, raw=len(rs), centred=len(cs),
                           survived=len(rs & cs), corr_dps=corr))
         log(f"{g:7}{mum-wtm:>+13.2f}{len(rs):>6}{len(cs):>9}{len(rs&cs):>10}{corr:>10.3f}")
-    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False,
+    pd.DataFrame(rows2).to_csv(os.path.join(a.out, "line_centring.csv"), index=False, lineterminator="\n",
                                float_format="%.12g")
     log("  Small offset + corr≈1 => no gross sensitivity confound; large raw→centred drop reflects the")
     log("  absolute pS'>0 gate (1uM / percent-Emax anchoring), not differential sensitivity.")
 
     # explicit encoding: the summary contains ≈, →, S′ and would otherwise be written
     # in the locale codec (cp1252 on Windows), which cannot encode them
-    with open(os.path.join(a.out, "blocking_summary.txt"), "w", encoding="utf-8") as f:
+    with open(os.path.join(a.out, "blocking_summary.txt"), "w", encoding="utf-8",
+              newline="\n") as f:   # LF: .gitattributes marks this -text
         f.write("\n".join(lines) + "\n")
     log(f"\nwrote {a.out}/candidate_null.csv, line_centring.csv, blocking_summary.txt")
 

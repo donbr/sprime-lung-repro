@@ -113,9 +113,9 @@ def main():
     # canonical row order so the derived tables are byte-identical across environments
     lung[[c for c in keepcols if c in lung.columns]] \
         .sort_values(["depmap_id", "name"], kind="stable") \
-        .to_csv(os.path.join(a.out, "sprime_lung_pairs.csv"), index=False)
+        .to_csv(os.path.join(a.out, "sprime_lung_pairs.csv"), index=False, lineterminator="\n")
     g.sort_values("ModelID", kind="stable") \
-        .to_csv(os.path.join(a.out, "lung_genotypes.csv"), index=False)
+        .to_csv(os.path.join(a.out, "lung_genotypes.csv"), index=False, lineterminator="\n")
     log(f"  wrote {a.out}/sprime_lung_pairs.csv and lung_genotypes.csv")
     sys.exit(0 if val_ok else 1)
 

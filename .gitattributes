@@ -15,10 +15,11 @@
 * text=auto eol=lf
 
 # Frozen, hashed, and byte-compared across environments — never translate these.
-concordance/reference_set_*.csv     -text
-concordance/reference_annotations_*.csv -text
-concordance/results/**/*.csv        -text
+# Broad by design: the raw per-agent census files determine the pinned md5 of the assembled census,
+# so a narrower pattern would leave the inputs to a hash outside the rule that protects the hash.
+concordance/**/*.csv                -text
 results/*.csv                       -text
+results/blocking_summary.txt        -text
 
 # Binary
 *.pptx  binary
