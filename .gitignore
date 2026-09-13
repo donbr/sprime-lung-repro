@@ -16,3 +16,6 @@ venv/
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Generated deck (build with docs/create_google_slides.gs / export from Slides)
+docs/sprime_lung_repro_presentation.pptx
