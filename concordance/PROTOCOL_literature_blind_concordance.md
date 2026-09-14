@@ -28,6 +28,11 @@ Populate `reference_set.csv` using the schema in `reference_template.csv`. Every
 DOI and a one-line rationale. Target-level entries (e.g. "RB1 → AURKA") are expanded automatically to all
 PRISM compounds annotated to that target, so you can specify a `target` and leave `compound` blank.
 
+**Status note (added 2026-09-06).** This protocol has since been executed twice, and the seed set below is
+superseded: see `BLIND_CENSUS_2026-08-31.md` (the benchmark of record) and `CENSUS_NOTES_2026-09-06.md`
+(the second census). Step 2's commit-before-scoring requirement is satisfied by the second census and only
+retroactively by the first.
+
 `reference_seed_grounded.csv` is a **starter** — the externally grounded set already assembled from
 BioGRID ORCS / ChEMBL / PubMed (2026-07-05), which predates and is independent of the ΔpS′ ranking. It is
 **incomplete** (no CDKN2A entries; a handful of targets per gene). Expand it to a genuine literature census

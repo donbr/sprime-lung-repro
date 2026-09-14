@@ -150,8 +150,58 @@ reference set from the published literature alone, independent of this analysis'
 databases searched, the search terms used, and the search dates; freeze that reference set with a timestamp
 before any candidate list is consulted; and only then compute recovery, misses, and a hypergeometric
 enrichment p-value against the frozen set. `concordance/concordance_enrichment.py` implements the scoring
-half of that protocol and writes `concordance/results/concordance_report.csv`, the source of the table
-below.
+half of that protocol.
+
+The protocol has been executed twice. The **benchmark of record** is the 2026-08-31 literature-blind census
+and is the one to quote. An earlier 7-row starter set produced a first pass that the census **overturned**;
+it is kept below, clearly labelled, because the way it failed is itself evidence for why the census was
+necessary.
+
+### The benchmark of record — the 2026-08-31 literature-blind census
+
+A 93-row reference census (95 rows before two inverse-direction entries are excluded by a rule written
+before any result existed) frozen and md5-hashed on 2026-08-31, sourced
+`concordance/results/2026-08-31_blind/concordance_report_primary_directional.csv`:
+
+| gene | reference in universe | recovered | hypergeometric p |
+|---|---|---|---|
+| PTEN | 39 | 2 | 0.94 |
+| CDKN2A | 12 | 0 | 1 |
+| RB1 | 94 | 13 | 0.0099 |
+| TP53 | 61 | 1 | 0.51 |
+
+**Only RB1 clears chance**, and the enrichment is carried entirely by one target class: removing AURKA and
+AURKB from the reference set leaves 6 of 69 recovered at p = 0.34. The supported claim is therefore the
+specific one — RB1-loss lines are selectively sensitive to Aurora kinase inhibitors — not a broad recovery
+of RB1 biology. `concordance/SUPPL7_TABLE1_RB1.md` is the generated per-target breakdown, with the misses,
+the leave-one-class-out sweep, a threshold sweep, and the Bonferroni correction across the four genotypes.
+
+That three of four genotypes fail is the point, not a disappointment: the same procedure that returns a
+positive for RB1 returns chance elsewhere, which is what distinguishes this from the circular version.
+
+**A second blinded census, assembled 2026-09-06 by different agents, reaches the same four verdicts.**
+Against a rule pre-specified and committed before that census existed — a genotype is claimable only if it
+clears chance in both censuses, separately and without pooling — RB1 passes at 13/73, p = 0.00097, while
+PTEN, CDKN2A and TP53 are concordant negatives.
+
+Read the second census carefully, because it adds less than it appears to. Its resolved RB1 reference set
+is a **strict subset** of the first census's (73 of 94), and both are scored against the same fixed
+candidate set from the same drug-response data, so the identical recovered set is arithmetic rather than
+independent convergence, and the smaller p-value comes entirely from nominating 21 fewer compounds that
+were all misses. What genuinely replicated is the *target nomination*: a second set of blind curators again
+named the Aurora, PARP and IAP targets the window recovers. The Aurora narrowing itself does **not**
+replicate under a class-versus-remainder rate test (Fisher p = 0.024 in census 1, 0.095 in census 2).
+Census agreement is moderate (Jaccard 0.39 to 0.70 on targets), so a single census is a noisier instrument
+than its frozen presentation suggests. Full report, including what the exercise does not establish, in
+`concordance/RESULT_second_census_2026-09-06.md`.
+
+### The superseded first pass — the 7-row starter set
+
+**Superseded.** The table below was computed against `concordance/reference_seed_grounded.csv`, a 7-row
+starter set, and is retained only as a worked illustration of the protocol and of how a small reference set
+misleads. Its TP53 result did not survive the census: against 61 reference compounds instead of 5, TP53
+recovery is 1/61 at p = 0.51. Do not quote these numbers as findings. Source:
+`concordance/results/concordance_report.csv`.
 
 | gene | reference in universe | recovered | hypergeometric p |
 |---|---|---|---|
@@ -194,9 +244,10 @@ the difference matters more than the two
 p-values' similar magnitude suggests. RB1's recovery is corroborated by independent literature: Aurora A
 inhibition (Gong et al. 2019, PMID 30373917) and Aurora B dependency (Oser et al. 2019, PMID 30373918) are
 each independently established as RB1-loss-selective vulnerabilities in RB1-deficient models, so RB1's
-p = 0.0013 enrichment here is a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
-equally real and reproducible — it is not a fluke of this dataset — but it has no independent literature
-support: no PubMed-indexed study demonstrates TP53-mutant-selective sensitivity to KIF11/Eg5 inhibitors,
+p = 0.0013 enrichment against this starter set — 0.0099 against the census that superseded it — was a reproducible finding *and* agreement with prior art. TP53's p = 5.6×10⁻⁸ is
+arithmetically real and reproducible against this starter set — it is not a coding fluke — but the census
+above showed it to be an artifact of a reference set small enough to be dominated by one target family, and
+it has no independent literature support either: no PubMed-indexed study demonstrates TP53-mutant-selective sensitivity to KIF11/Eg5 inhibitors,
 KIF11 is broadly common-essential rather than genotype-selective (`CONNECTORS.md`, and the seed row's own
 `inclusion_rationale` in `reference_seed_grounded.csv` reads "common-essential"), and the p-value traces to a
 single seed row (target KIF11, compound ispinesib), as above. TP53's enrichment is therefore an internal
@@ -307,11 +358,12 @@ approaches significance under the permutation null, and only marginally. The gen
 that line-centring was built to catch is genuinely absent, which is real evidence in the method's favor. The
 lists nonetheless depend heavily on the metric's absolute-scale anchoring, thinning sharply once cell lines
 are centred or once a bootstrap confidence interval is required to clear the effect-size threshold as a whole
-rather than just at its point estimate. RB1's recovery under the literature-blind benchmark is corroborated
-by independent literature (Gong et al. 2019, PMID 30373917; Oser et al. 2019, PMID 30373918); TP53 shows an
-equally strong enrichment in this same benchmark (p = 5.6×10⁻⁸) that is real and reproducible but has no
-independent literature support and so should be read as an internal empirical finding of this dataset rather
-than corroboration of known biology. An orthogonal RNAi cross-check on DEMETER2 genetic-dependency data
+rather than just at its point estimate. RB1's recovery under the literature-blind census is corroborated
+by independent literature (Gong et al. 2019, PMID 30373917; Oser et al. 2019, PMID 30373918), though the
+enrichment is carried by the Aurora class alone, so the supported claim is Aurora-specific rather than a
+broad recovery of RB1 biology. TP53 does **not** survive the census (1/61, p = 0.51); the earlier
+p = 5.6×10⁻⁸ came from a five-compound reference dominated by one target family. The TP53/KIF11 signal
+remains a real internal empirical finding of this dataset, and must not be presented as literature-validated. An orthogonal RNAi cross-check on DEMETER2 genetic-dependency data
 reproduces the RB1 direction in both directions at once — the RB–E2F axis and AKT1 score mutant-selective
 while CDK4/6 score wild-type-selective
 in the identical contrast — though it does not extend to Aurora kinase (AURKA/AURKB fall well short of

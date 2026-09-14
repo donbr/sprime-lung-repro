@@ -1,0 +1,5 @@
+gene,ref_a,recovered_a,hyperg_p_a,perm_p_a,bonferroni_p_a,clears_a,ref_b,recovered_b,hyperg_p_b,perm_p_b,bonferroni_p_b,clears_b,ref_shared,ref_only_a,ref_only_a_recovered,ref_only_b,ref_only_b_recovered,ref_b_subset_of_a,recovered_sets_identical,verdict,narrowed_to,narrowing_stable
+PTEN,39,2,0.94180453779,0.937306269373,1,False,71,3,0.990053779789,0.989801019898,1,False,36,3,1,35,2,False,False,concordant negative,,
+CDKN2A,12,0,1,1,1,False,15,0,1,1,1,False,12,0,0,3,0,False,True,concordant negative,,
+RB1,94,13,0.00987648640793,0.00909909009099,0.0395059456317,True,73,13,0.000967765305098,0.000399960004,0.00387106122039,True,73,21,0,0,0,True,True,CLAIMABLE,AURKA+AURKB,curated-pair-only
+TP53,61,1,0.511135535274,0.521847815218,1,False,38,0,1,1,1,False,33,28,1,5,0,False,False,concordant negative,,

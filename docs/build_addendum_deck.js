@@ -8,12 +8,17 @@
  * covered by tests/test_docs_numbers.py (which reads .md files only), so they can drift silently.
  * These cannot.
  *
+ * Reads the BENCHMARK OF RECORD, not the superseded seed run. A generated deck cannot drift from the
+ * CSV it reads, but nothing stops it reading the wrong one — this deck did exactly that until the
+ * 2026-08-31 census landed. Point every figure at results/2026-08-31_blind/.
+ *
  * Sources:
- *   concordance/results/concordance_report.csv   -> slide 1
- *   concordance/reference_seed_grounded.csv      -> slide 2
- *   results/demeter_validation.csv               -> slide 3
+ *   concordance/results/2026-08-31_blind/
+ *       concordance_report_primary_directional.csv  -> slides 1, 2, 5   (benchmark of record)
+ *   concordance/reference_set_2026-08-31_directional.csv -> slides 1, 2, 5
+ *   concordance/reference_seed_grounded.csv         -> slide 2 (SUPERSEDED — shown as such, never quoted)
+ *   results/demeter_validation.csv                  -> slides 3, 5
  *   (slide 4 is prose: review items with no implementation)
- *   all three CSVs above                         -> slide 5 (appendix: open issues not closed here)
  *
  * Usage:  node docs/build_addendum_deck.js
  * Output: docs/sprime_addendum.pptx  (gitignored — regenerate, don't commit)
@@ -25,6 +30,12 @@ const PptxGenJS = require("pptxgenjs");
 
 const REPO = path.resolve(__dirname, "..");
 const OUT = path.join(REPO, "docs", "sprime_addendum.pptx");
+
+// The benchmark of record (concordance/README.md). Never quote SEED_REPORT — it is the 7-row starter
+// run, retained only to show why the census was needed (its TP53 p = 5.6e-08 collapses to 0.51).
+const BLIND_REPORT = "concordance/results/2026-08-31_blind/concordance_report_primary_directional.csv";
+const BLIND_REF    = "concordance/reference_set_2026-08-31_directional.csv";
+const SEED_REF     = "concordance/reference_seed_grounded.csv";
 
 // ---------- palette: matches the parent deck so the addendum reads as one series ----------
 const BG = "0b0f19", PANEL = "0f172a", CARD = "1e293b";
@@ -91,7 +102,8 @@ pptx.title = "S′ Reproduction — Referee Addendum";
 
 // ---------------------------------------------------------------- slide 1
 {
-  const rep = readCsv("concordance/results/concordance_report.csv");
+  const rep = readCsv(BLIND_REPORT);
+  const nRef = readCsv(BLIND_REF).length;
   const s = pptx.addSlide();
   s.background = { color: BG };
   titleBlock(s, "REVIEW ISSUE B1 — CIRCULAR CONCORDANCE", "The Literature-Blind Concordance Benchmark");
@@ -99,8 +111,9 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   s.addText(
     "The manuscript scored its candidates against a reference set built from compounds that had already " +
     "passed the SL window, so “75 of 75 recovered, 100%” was guaranteed before any comparison ran. " +
-    "Scored instead against a set assembled independently, recovery is partial and two of four arms " +
-    "carry no usable signal.",
+    "Scored instead against a census assembled blind and frozen before scoring, three of the four arms " +
+    "return chance-level recovery. Only RB1 clears, and that is the point: the same procedure that " +
+    "returns a positive for one genotype returns nothing for the other three.",
     { x: 0.55, y: 1.36, w: 12.2, h: 0.72, fontFace: BODY, fontSize: 13.5, color: TEXT, margin: 0 });
 
   const rows = [[thead("Genotype"), thead("Reference compounds\nin universe"), thead("Recovered"),
@@ -129,26 +142,32 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   s.addText([
     { text: "Recovery alone is what made it circular\n", options: { bold: true, color: ROSE, fontSize: 13 } },
     { text: `Always report the enrichment p and the misses with it. Compounds missed: ${misses}. ` +
-            `A reference row names a target, not a compound, so 7 rows expand to the counts above.`,
+            `A reference row names a target, not a compound, so the census's ${nRef} rows expand to the ` +
+            `counts above.`,
       options: { fontSize: 11.5, color: TEXT } },
   ], { x: 0.75, y: 5.16, w: 5.55, h: 1.04, fontFace: BODY, margin: 0, valign: "top" });
 
   s.addShape(pptx.ShapeType.roundRect, { x: 6.8, y: 5.02, w: 5.95, h: 1.32,
     fill: { color: CARD }, line: { color: AMBER, width: 1 }, rectRadius: 0.08 });
   s.addText([
-    { text: "CDKN2A cannot be benchmarked at all\n", options: { bold: true, color: AMBER, fontSize: 13 } },
-    { text: `${cdkn2a ? cdkn2a.candidates : "48"} candidates, ${cdkn2a ? cdkn2a.universe : "1402"} tested, ` +
-            `and 0 reference compounds — the seed set has no CDKN2A rows. New rows cannot be added now: ` +
-            `the ΔpS′ rankings have already been seen, so any addition is contaminated by construction.`,
+    { text: "CDKN2A is testable and returns nothing\n", options: { bold: true, color: AMBER, fontSize: 13 } },
+    { text: `${cdkn2a.ref_in_universe} reference compounds in universe, ${cdkn2a.candidates} candidates, ` +
+            `${cdkn2a.universe} tested — ${cdkn2a.recovered} recovered, p = ${fmtP(cdkn2a.hyperg_p)}. The arm ` +
+            `is uninformative for a documented reason, not for want of a reference set: its dominant ` +
+            `MTAP/PRMT5 agents are absent from the PRISM 19Q4 library, and genotype calls miss the ` +
+            `homozygous deletions that are how CDKN2A is actually lost in lung (M6).`,
       options: { fontSize: 11.5, color: TEXT } },
   ], { x: 7.0, y: 5.16, w: 5.55, h: 1.04, fontFace: BODY, margin: 0, valign: "top" });
 
-  sourceNote(s, "Source: concordance/results/concordance_report.csv (committed), via concordance/concordance_enrichment.py.");
+  sourceNote(s, `Source: ${BLIND_REPORT} (committed), via concordance/concordance_enrichment.py. ` +
+    "The benchmark of record; RB1 passes the same gate against a second blind census (2026-09-06, p = 0.00097).");
 }
 
 // ---------------------------------------------------------------- slide 2
 {
-  const ref = readCsv("concordance/reference_seed_grounded.csv");
+  const ref = readCsv(SEED_REF);
+  const blindRef = readCsv(BLIND_REF);
+  const blindRep = readCsv(BLIND_REPORT);
   const n = ref.length;
   const withPmid = ref.filter(r => r.pmid).length;
   const withTerms = ref.filter(r => r.search_terms).length;
@@ -159,8 +178,14 @@ pptx.title = "S′ Reproduction — Referee Addendum";
 
   const s = pptx.addSlide();
   s.background = { color: BG };
-  titleBlock(s, "REVIEW ISSUE B1 — PROVENANCE OF THE REFERENCE SET",
-    "What the Blind Benchmark Rests On");
+  titleBlock(s, "REVIEW ISSUE B1 — PROVENANCE OF THE REFERENCE SETS",
+    "What the Benchmark Rests On, and What It Does Not");
+
+  s.addText(
+    `The benchmark of record is the ${blindRef.length}-row census frozen 2026-08-31; the ${n}-row seed set ` +
+    `below is SUPERSEDED and shown only because its documentation pass is what exposed the limitation both ` +
+    `sets share.`,
+    { x: 0.55, y: 1.14, w: 12.2, h: 0.26, fontFace: BODY, fontSize: 12, color: MUTED, margin: 0 });
 
   const stat = (x, big, label, color) => {
     s.addShape(pptx.ShapeType.roundRect, { x, y: 1.42, w: 2.92, h: 1.28,
@@ -170,10 +195,10 @@ pptx.title = "S′ Reproduction — Referee Addendum";
     s.addText(label, { x: x + 0.14, y: 2.14, w: 2.64, h: 0.48, fontFace: BODY, fontSize: 10.5,
       color: MUTED, align: "center", margin: 0 });
   };
-  stat(0.55, `${withPmid} / ${n}`, "rows carry a PMID and DOI", CYAN);
-  stat(3.72, `${distinct} / ${n}`, "distinct search queries recorded", CYAN);
-  stat(6.89, `${by("uncited").length}`, "row uncited after search", AMBER);
-  stat(10.06, `${by("contradicted").length}`, "row contradicted by its own source", ROSE);
+  stat(0.55, `${withPmid} / ${n}`, "seed rows carry a PMID and DOI", CYAN);
+  stat(3.72, `${distinct} / ${n}`, "seed rows with a distinct query", CYAN);
+  stat(6.89, `${by("uncited").length}`, "seed row uncited after search", AMBER);
+  stat(10.06, `${by("contradicted").length}`, "seed row contradicted by its source", ROSE);
 
   s.addShape(pptx.ShapeType.roundRect, { x: 0.55, y: 2.92, w: 12.2, h: 1.30,
     fill: { color: CARD }, line: { color: PANEL, width: 1 }, rectRadius: 0.08 });
@@ -183,8 +208,8 @@ pptx.title = "S′ Reproduction — Referee Addendum";
     ...by("uncited").map(r => ({
       text: `UNCITED · ${r.genotype} → ${r.target} (${r.compound}) — no paper establishes ` +
             `${r.genotype}-deficient-selective sensitivity after 3 recorded queries. Same arm the benchmark ` +
-            `scores at p = ${fmtP((readCsv("concordance/results/concordance_report.csv")
-              .find(x => x.gene === r.genotype) || {}).hyperg_p)}.`,
+            `scores at p = ${fmtP((blindRep.find(x => x.gene === r.genotype) || {}).hyperg_p)} in the census ` +
+            `of record. The census does not nominate ${r.target} for any genotype.`,
       options: { fontSize: 11.5, color: AMBER, breakLine: true } })),
     ...by("contradicted").map(r => ({
       text: `CONTRADICTED · ${r.genotype} → ${r.target} (${r.compound}) — its sole hit (PMID ${r.pmid}) reports the ` +
@@ -197,23 +222,28 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   s.addText([
     { text: "The limitation a referee should hold us to\n",
       options: { bold: true, color: ROSE, fontSize: 13.5, breakLine: true } },
-    { text: `The ${redoc} pass documented a seed set assembled earlier. It was retrospective, not blind assembly, ` +
-            `and it did not re-freeze the set (date_frozen remains ${frozen}) — documented provenance is not an ` +
-            `independent census.\n`,
+    { text: `SEED SET (superseded): the ${redoc} pass documented a set assembled earlier. Retrospective, not blind ` +
+            `assembly, and it did not re-freeze the set (date_frozen remains ${frozen}). Its freeze date predates ` +
+            `this repository's INITIAL commit (02b06ce, 2026-08-11) by five weeks, and that commit is where the set ` +
+            `and its scored report both first appear. No tags. So no ordering evidence can exist in this history.\n`,
       options: { fontSize: 11.5, color: TEXT, breakLine: true } },
-    { text: `The freeze date is an attestation, not a verified timestamp. It predates this repository's INITIAL ` +
-            `commit (02b06ce, 2026-08-11) by five weeks, and that initial commit is where the reference set and the ` +
-            `scored report both first appear. There are no tags. So the protocol's "commit with a timestamp / git tag" ` +
-            `has neither, and no ordering evidence can exist in this history — the blind-assembly claim rests on the ` +
-            `curator's word, not on version control.\n`,
+    { text: `CENSUS OF RECORD (2026-08-31): assembled blind, but its freeze commit is RETROACTIVE — 9ca5046, six ` +
+            `days after scoring. The 2026-09-06 replication is the one whose freeze commits precede scoring ` +
+            `(38ce6f6 then 0fb42f8), with the raw per-agent output committed so a reviewer can re-derive the ` +
+            `assembly. Read its §2: census 2's RB1 set is a strict SUBSET of census 1's, so the identical ` +
+            `recovered set is arithmetic, not independent convergence.\n`,
       options: { fontSize: 11.5, color: TEXT, breakLine: true } },
+    { text: `Neither census is an independent replication: both were commissioned from a results-aware context, ` +
+            `and agent isolation was enforced by instruction rather than by a sandbox.\n`,
+      options: { fontSize: 11.5, color: ROSE, breakLine: true } },
     { text: `A BioGRID ORCS hit fraction can establish pan-essentiality but never genotype-selectivity, so no ` +
             `selectivity claim in this set is sourced to one.`,
       options: { fontSize: 11.5, color: CYAN, bold: true } },
   ], { x: 0.78, y: 4.54, w: 11.74, h: 2.00, fontFace: BODY, margin: 0, valign: "top" });
 
-  sourceNote(s, `Source: concordance/reference_seed_grounded.csv and reference_template.csv (committed); ` +
-    `${withTerms}/${n} rows carry a query string. Citations verified against PubMed.`);
+  sourceNote(s, `Sources: ${BLIND_REF} (${blindRef.length} rows, the benchmark of record) and ${SEED_REF} ` +
+    `(${n} rows, superseded; ${withTerms}/${n} carry a query string), plus reference_template.csv. ` +
+    `Citations verified against PubMed.`);
 }
 
 // ---------------------------------------------------------------- slide 3
@@ -345,8 +375,9 @@ pptx.title = "S′ Reproduction — Referee Addendum";
 
 // ---------------------------------------------------------------- slide 5 (appendix)
 {
-  const ref = readCsv("concordance/reference_seed_grounded.csv");
-  const rep = readCsv("concordance/results/concordance_report.csv");
+  const ref = readCsv(SEED_REF);
+  const blindRef = readCsv(BLIND_REF);
+  const rep = readCsv(BLIND_REPORT);
   const dem = readCsv("results/demeter_validation.csv");
 
   // issue 1 — AKT1: in the reference set under one genotype, RNAi-significant under another
@@ -356,9 +387,10 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   const refTargets = new Set(ref.map(r => r.target));          // across ALL genotypes, not per-arm
   const sigInRef = sig.filter(r => refTargets.has(r.target)).map(r => r.target);
 
-  // issue 2 — CDKN2A: no reference rows at all
+  // issue 2 — CDKN2A: benchmarked and null; the gap is the genotype call, not the reference set
   const cd = rep.find(r => r.gene === "CDKN2A");
-  const nCdkn = ref.filter(r => r.genotype === "CDKN2A").length;
+  const nCdkn = blindRef.filter(r => r.genotype === "CDKN2A").length;
+  const aktInBlind = blindRef.some(r => r.target === "AKT1");
 
   const s = pptx.addSlide();
   s.background = { color: BG };
@@ -371,44 +403,46 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   // ---- card 1
   s.addShape(pptx.ShapeType.roundRect, { x: 0.55, y: 1.84, w: 5.95, h: 3.42,
     fill: { color: CARD }, line: { color: AMBER, width: 1 }, rectRadius: 0.08 });
-  s.addText("1 — AKT1 may be mis-assigned, not unsupported", { x: 0.75, y: 1.98, w: 5.55, h: 0.34,
+  s.addText("1 — AKT1: an RNAi signal no reference set nominates", { x: 0.75, y: 1.98, w: 5.55, h: 0.34,
     fontFace: BODY, fontSize: 13, bold: true, color: AMBER, margin: 0, valign: "top" });
   s.addText([
-    { text: `AKT1 sits in the reference set under ${refAkt.genotype}, support_status = ${refAkt.support_status} ` +
-            `— the one row for which no citation could be found (3 recorded queries, ~380 PubMed hits).\n\n`,
+    { text: `AKT1 sits in the SEED set under ${refAkt.genotype}, support_status = ${refAkt.support_status} ` +
+            `— the one row for which no citation could be found (3 recorded queries, ~380 PubMed hits). The ` +
+            `${blindRef.length}-row census of record does ${aktInBlind ? "" : "NOT "}nominate AKT1 for any ` +
+            `genotype, which is corroborating evidence that the seed row was unsupported.\n\n`,
       options: { fontSize: 11.5, color: TEXT } },
     { text: `Yet of the ${sig.length} targets flagged mutant-selective under RB1 in DEMETER2 ` +
             `(${sig.map(r => r.target).join(", ")} — ΔpD < 0 with mutant-direction q < 0.10), AKT1 is the ` +
-            `only one present in the reference set at all: q = ${demAkt.bh_q} mutant-direction, ` +
+            `only one present in the seed reference set at all: q = ${demAkt.bh_q} mutant-direction, ` +
             `${demAkt.q_two} two-sided, ΔpD = ${fmtD(demAkt.delta_pD)}.\n\n`,
       options: { fontSize: 11.5, color: TEXT } },
     { text: "Unresolved: ", options: { fontSize: 11.5, bold: true, color: AMBER } },
     { text: `whether the row belongs under RB1 rather than ${refAkt.genotype}, or whether this is noise at ` +
-            `n_mut = ${demAkt.n_mut} against n_wt = ${demAkt.n_wt}. Nothing in this work settles it, and ` +
-            `${refAkt.genotype} is also the arm the blind benchmark scores at ` +
-            `p = ${fmtP((rep.find(r => r.gene === refAkt.genotype) || {}).hyperg_p)}.`,
+            `n_mut = ${demAkt.n_mut} against n_wt = ${demAkt.n_wt}. A drug-response signal the blind census ` +
+            `never nominated is exactly what a benchmark cannot adjudicate, and ${refAkt.genotype} is the arm ` +
+            `that census scores at p = ${fmtP((rep.find(r => r.gene === refAkt.genotype) || {}).hyperg_p)}.`,
       options: { fontSize: 11.5, color: TEXT } },
   ], { x: 0.75, y: 2.36, w: 5.55, h: 2.80, fontFace: BODY, margin: 0, valign: "top" });
 
   // ---- card 2
   s.addShape(pptx.ShapeType.roundRect, { x: 6.8, y: 1.84, w: 5.95, h: 3.42,
     fill: { color: CARD }, line: { color: ROSE, width: 1 }, rectRadius: 0.08 });
-  s.addText("2 — CDKN2A cannot be benchmarked, and cannot be fixed now", { x: 7.0, y: 1.98, w: 5.55, h: 0.34,
+  s.addText("2 — CDKN2A is benchmarked and still uninformative", { x: 7.0, y: 1.98, w: 5.55, h: 0.34,
     fontFace: BODY, fontSize: 13, bold: true, color: ROSE, margin: 0, valign: "top" });
   s.addText([
-    { text: `The seed set has ${nCdkn} CDKN2A rows. ${cd ? cd.candidates : "48"} candidates against ` +
-            `${cd ? cd.universe : "1402"} tested compounds, with nothing to score them against, so the arm ` +
-            `returns no p-value at all.\n\n`,
+    { text: `The census of record carries ${nCdkn} CDKN2A rows, ${cd.ref_in_universe} of them in universe, ` +
+            `against ${cd.candidates} candidates and ${cd.universe} tested compounds. The arm scores: ` +
+            `${cd.recovered} recovered, p = ${fmtP(cd.hyperg_p)}. So this is no longer a missing reference ` +
+            `set — it is a null, and two known defects are why.\n\n`,
       options: { fontSize: 11.5, color: TEXT } },
-    { text: "Rows cannot simply be added. ", options: { fontSize: 11.5, bold: true, color: ROSE } },
-    { text: "The ΔpS′ rankings have already been seen in this project, so any row added now is contaminated " +
-            "by construction — precisely the circularity review issue B1 exists to rule out. A CDKN2A arm " +
-            "requires a pre-registered census assembled by someone blind to the rankings.\n\n",
+    { text: "Library coverage. ", options: { fontSize: 11.5, bold: true, color: ROSE } },
+    { text: "The strongest CDKN2A-co-deletion vulnerability is MTAP/PRMT5, and PRISM 19Q4 contains no " +
+            "PRMT5 or MAT2A agent. The reference set names targets the screen cannot test.\n\n",
       options: { fontSize: 11.5, color: TEXT } },
-    { text: "Compounded by M6: ", options: { fontSize: 11.5, bold: true, color: ROSE } },
-    { text: "genotype calls read the damaging-mutation matrix only, and CDKN2A in lung is lost predominantly " +
-            "by homozygous deletion — so its wild-type cohort is silently contaminated with functionally null " +
-            "lines, biasing ΔpS′ toward zero. Fixing the reference set alone would not fix the arm.",
+    { text: "M6 — the genotype call. ", options: { fontSize: 11.5, bold: true, color: ROSE } },
+    { text: "Calls read the damaging-mutation matrix only, and CDKN2A in lung is lost predominantly by " +
+            "homozygous deletion, so the wild-type cohort is silently contaminated with functionally null " +
+            "lines and ΔpS′ is biased toward zero. A negative here is therefore not yet evidence of absence.",
       options: { fontSize: 11.5, color: TEXT } },
   ], { x: 7.0, y: 2.36, w: 5.55, h: 2.80, fontFace: BODY, margin: 0, valign: "top" });
 
@@ -419,15 +453,16 @@ pptx.title = "S′ Reproduction — Referee Addendum";
     { text: "What would settle them   ", options: { bold: true, color: CYAN, fontSize: 12 } },
     { text: `(1) a pre-registered query for RB1-loss-selective AKT dependence, plus an audit of PRISM's MoA ` +
             `annotation for MK-2206 — the same annotation layer the review flagged as sometimes wrong.   ` +
-            `(2) a blind CDKN2A census frozen before anyone looks at the rankings, together with ` +
-            `copy-number-aware genotype calls from CRISPRGeneDependency.csv, which is listed in ` +
-            `DOWNLOAD_CHECKLIST.md and deliberately not wired in.`,
+            `(2) copy-number-aware genotype calls from CRISPRGeneDependency.csv, listed in ` +
+            `DOWNLOAD_CHECKLIST.md and deliberately not wired in, plus a screen that actually contains a ` +
+            `PRMT5 agent. The blind census is no longer the missing piece for CDKN2A — the genotype call ` +
+            `and the compound library are.`,
       options: { fontSize: 11, color: TEXT } },
   ], { x: 0.75, y: 5.58, w: 11.8, h: 0.90, fontFace: BODY, margin: 0, valign: "top" });
 
-  sourceNote(s, "Computed at build time from concordance/reference_seed_grounded.csv, " +
-    "concordance/results/concordance_report.csv and results/demeter_validation.csv. " +
-    `Reference-set membership is matched on target symbol across all genotypes (${sigInRef.join(", ") || "none"} matched). ` +
+  sourceNote(s, `Computed at build time from ${BLIND_REF}, ${BLIND_REPORT}, ${SEED_REF} ` +
+    "and results/demeter_validation.csv. " +
+    `Seed-reference membership is matched on target symbol across all genotypes (${sigInRef.join(", ") || "none"} matched). ` +
     "bh_q/q_mut tests only 'mutant more dependent'; q_two is the conservative two-sided test. " +
     "The mutant_selective flag is ΔpD < 0 with q_mut < 0.10 (demeter_validation.py), not a 0.05 cut.");
 }

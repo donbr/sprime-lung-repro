@@ -15,7 +15,7 @@ companion manuscript (in review) asked for, and that this code does not carry ou
 | Label-permutation null | yes |
 | Line-centring / general-sensitivity control | yes |
 | Per-compound bootstrap CI gate | yes |
-| Literature-blind concordance engine | yes (engine only; reference set incomplete) |
+| Literature-blind concordance engine | yes (engine + two frozen censuses; 2026-08-31 is the benchmark of record, replicated 2026-09-06) |
 | DEMETER2 RNAi cross-check | yes (output committed; regenerating needs the optional input) |
 | Curve fit-quality / minimum-E_max gate | no |
 | EC₅₀ censoring at the tested dose range | no |
@@ -68,8 +68,10 @@ carrying a CDKN2A deep deletion are scored wild type by this pipeline's genotype
 contaminating the wild-type cohort with lines that are functionally CDKN2A-null. That contamination biases
 ΔpS′ toward zero for the CDKN2A arm — a real mutant-selective effect would be diluted by wild-type-labeled
 lines that are not, in fact, wild type — which is one reason the CDKN2A arm is the weakest of the four in
-`evidence.md`, and part of why its concordance cannot be benchmarked at all (`concordance/` has no CDKN2A
-reference entries). RB1 and PTEN losses are also frequently copy-number events in lung cancer, so this gap
+`evidence.md`, and part of why the CDKN2A concordance arm is the least informative. Both censuses do carry CDKN2A
+entries, but the arm is dominated by MTAP/PRMT5 agents that are absent from the PRISM 19Q4 library, so most
+of its reference rows cannot be tested at all — a dataset boundary rather than a negative result (see
+`concordance/BLIND_CENSUS_2026-08-31.md`). RB1 and PTEN losses are also frequently copy-number events in lung cancer, so this gap
 is not unique to CDKN2A, only most acute there.
 
 `DOWNLOAD_CHECKLIST.md` names `CRISPRGeneDependency.csv` (DepMap CRISPR, 24Q2) as an available input — it
@@ -119,6 +121,12 @@ no PTEN target can be assessed by RNAi at all under this cross-check. That is a 
 analysis, not evidence that PTEN dependencies do not exist.
 
 ## The concordance reference set is incomplete
+
+**This section describes the superseded starter set.** It was replaced on 2026-08-31 by
+`concordance/reference_set_2026-08-31_directional.csv`, a 93-row census in which every row carries a PMID or
+DOI, the query string that surfaced it, a freeze date and a rationale — the fields whose absence is the
+complaint below. The gaps recorded here are therefore historical, and they are what the census was built to
+close. See `concordance/BLIND_CENSUS_2026-08-31.md`.
 
 `concordance/reference_seed_grounded.csv` holds 7 rows: 5 for RB1, 1 for PTEN, 1 for TP53, and none for
 CDKN2A. The blind-assembly protocol described in `evidence.md` and `CONNECTORS.md` makes a PMID/DOI and a
@@ -184,8 +192,9 @@ The provenance columns are documentation only — `concordance_enrichment.py` re
 There is a second, separate gap in that reference set, about resolution rather than provenance, and nothing
 in this repository closes it. A reference row names a *target*, not a compound, so
 `concordance_enrichment.py` expands each row by token-matching that target against **PRISM's own target and
-MOA annotation strings** — which is how 7 curated rows become the 49, 10 and 5 "reference in universe"
-compounds reported in `evidence.md`. Those annotations are third-party metadata that this repository takes
+MOA annotation strings** — which is how 7 curated rows became the 49, 10 and 5 "reference in universe"
+compounds reported in the *superseded* starter-set table in `evidence.md` (the census of record expands to
+39, 12, 94 and 61). Those annotations are third-party metadata that this repository takes
 at face value and never audits: the referee review of the companion manuscript (in review) flagged them as
 sometimes wrong, and `concordance/README.md` (caveat 2) records barasertib as a specific mis-annotated
 example. Every enrichment p-value in `evidence.md` therefore inherits whatever annotation errors PRISM
@@ -193,8 +202,10 @@ carries — a compound annotated to the wrong target inflates or deflates the re
 script here spot-checks the resolved lists. Neither the recovery counts nor the misses can be read as
 cleaner than the annotation layer underneath them.
 
-Treat the concordance numbers reported in `evidence.md` as illustrative of the protocol working, not as a
-finished or comprehensive benchmark.
+The seed-set numbers still shown in `evidence.md` under "The superseded first pass" are illustrative of
+the protocol working, not findings. The census of record and its 2026-09-06 replication *are* the
+benchmark, and the annotation caveat above applies to them undiminished: every enrichment p-value in this
+repository inherits whatever errors PRISM's target annotations carry.
 
 ## No network access at analysis time
 

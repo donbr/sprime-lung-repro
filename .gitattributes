@@ -1,0 +1,28 @@
+# Line endings are load-bearing in this repo, not cosmetic.
+#
+# The frozen census files are md5-pinned, and those hashes are the audit trail for the blinded
+# census assembly: they are asserted by concordance/build_suppl7_table1.py, recorded in
+# concordance/BLIND_CENSUS_2026-08-31.md, and printed in the provenance block of every generated
+# supplement. With core.autocrlf=true (the Windows default) a checkout rewrites LF to CRLF, which
+# changes those hashes — the directional census reads 76845dcc6131ab917717c7724da2c420 on Linux and
+# f18e17dc5507008ee7b6e347e472d6b4 on Windows. A reviewer verifying the published hash by hand would
+# get a mismatch and could reasonably conclude the frozen file had been altered.
+#
+# So: normalise text to LF everywhere, and mark every checksum-pinned or byte-compared data file
+# -text, meaning git stores and restores it verbatim. Bytes on disk then equal bytes in the repo
+# equal the published md5 on every platform.
+
+* text=auto eol=lf
+
+# Frozen, hashed, and byte-compared across environments — never translate these.
+# Broad by design: the raw per-agent census files determine the pinned md5 of the assembled census,
+# so a narrower pattern would leave the inputs to a hash outside the rule that protects the hash.
+concordance/**/*.csv                -text
+results/*.csv                       -text
+results/blocking_summary.txt        -text
+
+# Binary
+*.pptx  binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
