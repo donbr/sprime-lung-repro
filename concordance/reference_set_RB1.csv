@@ -1,0 +1,21 @@
+# reference_set_RB1.csv — RB1 literature-blind concordance reference set (worked example)
+# Assembled from published RB1-loss synthetic-lethal / selective-dependency evidence ONLY, blind to ΔpS'.
+# Inclusion rule (stated up front): a druggable target with an experimental drug-screen or genetic
+#   demonstration that RB1/RB loss CONFERS SELECTIVE sensitivity/dependency in a cancer model, with a PMID/DOI.
+# Exclusion note: PARP1 was considered and EXCLUDED, now on convergent evidence (ob-research CQ, 2026-09-02):
+#   (1) LITERATURE — RB1-associated PARP sensitivity is driven by CO-DELETED NEIGHBORS, not RB1 itself:
+#       RNASEH2B (13q14, adjacent to RB1; Carmichael 2024 JCI, doi:10.1172/JCI178278) and BRCA2
+#       (Chakraborty 2019 Clin Cancer Res, doi:10.1158/1078-0432.CCR-19-1570). RB1-deficient cells are not
+#       simply PARP-sensitive — they require CK2 co-inhibition to be killed by PARP inhibitors (Bulanova 2024
+#       Sci Adv, doi:10.1126/sciadv.adj1564).
+#   (2) NETWORK — STRING places RB1 (cell-cycle/E2F module) and PARP1 (BER/DNA-repair module, which contains
+#       BRCA1/2) in DISJOINT modules with no RB1-PARP1 edge; PARP1 does not appear among RB1's 40 partners.
+#   (3) CLINICAL — no PARP-inhibitor trial is selected on RB1 loss (ClinicalTrials.gov).
+#   PARP1 therefore fails the RB1-selectivity inclusion rule.
+# Grounding tools: PubMed (RB1-selectivity citation) + BioGRID ORCS (target is a real CRISPR dependency).
+# Frozen 2026-09-02, BEFORE reading ΔpS' for these compounds. Verified via PubMed.
+genotype,target,compound,pmid,doi,source_db,search_terms,date_frozen,inclusion_rationale
+RB1,AURKB,,30373918,10.1158/2159-8290.CD-18-0389,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND Aurora B AND (synthetic lethal OR dependency) AND (SCLC OR lung)",2026-09-02,"Oser 2019: RB1-null SCLC hyperdependent on Aurora B (CRISPR SL screen); AURKB broadly essential in ORCS"
+RB1,AURKA,,30373917,10.1158/2159-8290.CD-18-0469,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND Aurora A AND synthetic lethal",2026-09-02,"Gong 2019: Aurora A inhibition synthetic-lethal with RB1 loss; AURKA broadly essential in ORCS"
+RB1,PLK1,,29386107,10.1016/j.celrep.2018.01.022,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND PLK1 AND (synthetic lethal OR dependency)",2026-09-02,"Witkiewicz 2018: RB-loss drug screen — PLK1 (chromosome segregation) selective for RB loss; RB-deficient tumors express high PLK1"
+RB1,CHEK1,,29386107,10.1016/j.celrep.2018.01.022,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND (CHEK1 OR CHK1) AND (synthetic lethal OR replication stress)",2026-09-02,"Witkiewicz 2018: RB-loss drug screen — CHK inhibitors RB-selective in vitro and in xenografts; RB-deficient tumors express high CHK1"
