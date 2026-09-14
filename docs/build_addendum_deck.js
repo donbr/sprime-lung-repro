@@ -13,6 +13,7 @@
  *   concordance/reference_seed_grounded.csv      -> slide 2
  *   results/demeter_validation.csv               -> slide 3
  *   (slide 4 is prose: review items with no implementation)
+ *   all three CSVs above                         -> slide 5 (appendix: open issues not closed here)
  *
  * Usage:  node docs/build_addendum_deck.js
  * Output: docs/sprime_addendum.pptx  (gitignored — regenerate, don't commit)
@@ -330,6 +331,95 @@ pptx.title = "S′ Reproduction — Referee Addendum";
 
   sourceNote(s, "Gaps as enumerated in CLAUDE.md and docs/scope.md. The M1 note restates the review's own " +
     "finding that the bootstrap CI gate is not a substitute for a fit-quality filter.");
+}
+
+// ---------------------------------------------------------------- slide 5 (appendix)
+{
+  const ref = readCsv("concordance/reference_seed_grounded.csv");
+  const rep = readCsv("concordance/results/concordance_report.csv");
+  const dem = readCsv("results/demeter_validation.csv");
+
+  // issue 1 — AKT1: in the reference set under one genotype, RNAi-significant under another
+  const refAkt = ref.find(r => r.target === "AKT1");
+  const demAkt = dem.find(r => r.genotype === "RB1" && r.target === "AKT1");
+  const sig = dem.filter(r => r.genotype === "RB1" && r.mutant_selective === "True");
+  const refTargets = new Set(ref.map(r => r.target));          // across ALL genotypes, not per-arm
+  const sigInRef = sig.filter(r => refTargets.has(r.target)).map(r => r.target);
+
+  // issue 2 — CDKN2A: no reference rows at all
+  const cd = rep.find(r => r.gene === "CDKN2A");
+  const nCdkn = ref.filter(r => r.genotype === "CDKN2A").length;
+
+  const s = pptx.addSlide();
+  s.background = { color: BG };
+  titleBlock(s, "APPENDIX — UNRESOLVED", "Open Issues This Addendum Does Not Close");
+
+  s.addText("Both are named here rather than left for a referee to find. Neither is closed by any control in " +
+    "either deck, and neither can be closed by working harder on the existing data.",
+    { x: 0.55, y: 1.32, w: 12.2, h: 0.34, fontFace: BODY, fontSize: 13.5, color: TEXT, margin: 0 });
+
+  // ---- card 1
+  s.addShape(pptx.ShapeType.roundRect, { x: 0.55, y: 1.84, w: 5.95, h: 3.42,
+    fill: { color: CARD }, line: { color: AMBER, width: 1 }, rectRadius: 0.08 });
+  s.addText("1 — AKT1 may be mis-assigned, not unsupported", { x: 0.75, y: 1.98, w: 5.55, h: 0.34,
+    fontFace: BODY, fontSize: 13, bold: true, color: AMBER, margin: 0, valign: "top" });
+  s.addText([
+    { text: `AKT1 sits in the reference set under ${refAkt.genotype}, support_status = ${refAkt.support_status} ` +
+            `— the one row for which no citation could be found (3 recorded queries, ~380 PubMed hits).\n\n`,
+      options: { fontSize: 11.5, color: TEXT } },
+    { text: `Yet of the ${sig.length} targets flagged mutant-selective under RB1 in DEMETER2 ` +
+            `(${sig.map(r => r.target).join(", ")} — ΔpD < 0 with mutant-direction q < 0.10), AKT1 is the ` +
+            `only one present in the reference set at all: q = ${demAkt.bh_q} mutant-direction, ` +
+            `${demAkt.q_two} two-sided, ΔpD = ${fmtD(demAkt.delta_pD)}.\n\n`,
+      options: { fontSize: 11.5, color: TEXT } },
+    { text: "Unresolved: ", options: { fontSize: 11.5, bold: true, color: AMBER } },
+    { text: `whether the row belongs under RB1 rather than ${refAkt.genotype}, or whether this is noise at ` +
+            `n_mut = ${demAkt.n_mut} against n_wt = ${demAkt.n_wt}. Nothing in this work settles it, and ` +
+            `${refAkt.genotype} is also the arm the blind benchmark scores at ` +
+            `p = ${fmtP((rep.find(r => r.gene === refAkt.genotype) || {}).hyperg_p)}.`,
+      options: { fontSize: 11.5, color: TEXT } },
+  ], { x: 0.75, y: 2.36, w: 5.55, h: 2.80, fontFace: BODY, margin: 0, valign: "top" });
+
+  // ---- card 2
+  s.addShape(pptx.ShapeType.roundRect, { x: 6.8, y: 1.84, w: 5.95, h: 3.42,
+    fill: { color: CARD }, line: { color: ROSE, width: 1 }, rectRadius: 0.08 });
+  s.addText("2 — CDKN2A cannot be benchmarked, and cannot be fixed now", { x: 7.0, y: 1.98, w: 5.55, h: 0.34,
+    fontFace: BODY, fontSize: 13, bold: true, color: ROSE, margin: 0, valign: "top" });
+  s.addText([
+    { text: `The seed set has ${nCdkn} CDKN2A rows. ${cd ? cd.candidates : "48"} candidates against ` +
+            `${cd ? cd.universe : "1402"} tested compounds, with nothing to score them against, so the arm ` +
+            `returns no p-value at all.\n\n`,
+      options: { fontSize: 11.5, color: TEXT } },
+    { text: "Rows cannot simply be added. ", options: { fontSize: 11.5, bold: true, color: ROSE } },
+    { text: "The ΔpS′ rankings have already been seen in this project, so any row added now is contaminated " +
+            "by construction — precisely the circularity review issue B1 exists to rule out. A CDKN2A arm " +
+            "requires a pre-registered census assembled by someone blind to the rankings.\n\n",
+      options: { fontSize: 11.5, color: TEXT } },
+    { text: "Compounded by M6: ", options: { fontSize: 11.5, bold: true, color: ROSE } },
+    { text: "genotype calls read the damaging-mutation matrix only, and CDKN2A in lung is lost predominantly " +
+            "by homozygous deletion — so its wild-type cohort is silently contaminated with functionally null " +
+            "lines, biasing ΔpS′ toward zero. Fixing the reference set alone would not fix the arm.",
+      options: { fontSize: 11.5, color: TEXT } },
+  ], { x: 7.0, y: 2.36, w: 5.55, h: 2.80, fontFace: BODY, margin: 0, valign: "top" });
+
+  // ---- what would settle each
+  s.addShape(pptx.ShapeType.roundRect, { x: 0.55, y: 5.44, w: 12.2, h: 1.16,
+    fill: { color: PANEL }, line: { color: CYAN, width: 1 }, rectRadius: 0.08 });
+  s.addText([
+    { text: "What would settle them   ", options: { bold: true, color: CYAN, fontSize: 12 } },
+    { text: `(1) a pre-registered query for RB1-loss-selective AKT dependence, plus an audit of PRISM's MoA ` +
+            `annotation for MK-2206 — the same annotation layer the review flagged as sometimes wrong.   ` +
+            `(2) a blind CDKN2A census frozen before anyone looks at the rankings, together with ` +
+            `copy-number-aware genotype calls from CRISPRGeneDependency.csv, which is listed in ` +
+            `DOWNLOAD_CHECKLIST.md and deliberately not wired in.`,
+      options: { fontSize: 11, color: TEXT } },
+  ], { x: 0.75, y: 5.58, w: 11.8, h: 0.90, fontFace: BODY, margin: 0, valign: "top" });
+
+  sourceNote(s, "Computed at build time from concordance/reference_seed_grounded.csv, " +
+    "concordance/results/concordance_report.csv and results/demeter_validation.csv. " +
+    `Reference-set membership is matched on target symbol across all genotypes (${sigInRef.join(", ") || "none"} matched). ` +
+    "bh_q/q_mut tests only 'mutant more dependent'; q_two is the conservative two-sided test. " +
+    "The mutant_selective flag is ΔpD < 0 with q_mut < 0.10 (demeter_validation.py), not a 0.05 cut.");
 }
 
 pptx.writeFile({ fileName: OUT }).then(() => {
