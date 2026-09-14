@@ -369,6 +369,73 @@ def test_committed_csvs_are_lf():
     )
 
 
+def _debold(text):
+    """Strip markdown bold markers before matching a table row.
+
+    Several documents bold whichever cells they want the reader to notice, and they do not
+    agree on which ones. The numbers are the contract; the emphasis is presentation.
+    """
+    return text.replace("**", "")
+
+
+def _row(r):
+    """The structurally uniform prefix of a concordance table row, through recovery %."""
+    return (f"| {r.gene} | {int(r.ref_in_universe)} | {int(r.candidates)} | "
+            f"{int(r.universe)} | {int(r.recovered)} | {r.recovery:.0%} |")
+
+
+def test_concordance_readme_rebuild_table():
+    """concordance/README.md's rebuild table must match results_v1/concordance_report.csv.
+
+    The literature-blind rebuild (Supplement 7) reports its own numbers from a separate,
+    frozen reference set. Without this the rebuild table could drift from the CSV it was
+    generated from while test_concordance_readme_table kept passing on the starter set.
+    """
+    df = _read("concordance/results_v1/concordance_report.csv")
+    _assert_one_row_per_gene(df, "concordance/results_v1/concordance_report.csv")
+    doc = _debold(_doc("concordance/README.md"))
+    for r in df.itertuples():
+        _assert_in(doc, _row(r), "concordance/README.md",
+                   "concordance/results_v1/concordance_report.csv")
+        _assert_in(doc, f"{r.hyperg_p:.2g}", "concordance/README.md",
+                   "concordance/results_v1/concordance_report.csv (hyperg_p)")
+
+
+def test_rebuild_all_genotypes_doc_table():
+    """CONCORDANCE_REBUILD_all_genotypes.md must match results_v1/concordance_report.csv.
+
+    Only the counts and recovery % are pinned. That document rounds the enrichment p to a
+    different number of significant figures per row for readability, so a formatted-p match
+    would assert the prose style rather than the result.
+    """
+    df = _read("concordance/results_v1/concordance_report.csv")
+    _assert_one_row_per_gene(df, "concordance/results_v1/concordance_report.csv")
+    doc = _debold(_doc("concordance/CONCORDANCE_REBUILD_all_genotypes.md"))
+    for r in df.itertuples():
+        _assert_in(doc, _row(r), "concordance/CONCORDANCE_REBUILD_all_genotypes.md",
+                   "concordance/results_v1/concordance_report.csv")
+
+
+def test_walkthrough_rb1_table():
+    """WALKTHROUGH_RB1_concordance_rebuild.md must match results_RB1/concordance_report.csv.
+
+    The walkthrough is the worked example, so its RB1 row is the one number a reader will
+    copy. The other three genotypes carry an empty reference set in that run by design.
+    """
+    df = _read("concordance/results_RB1/concordance_report.csv")
+    _assert_one_row_per_gene(df, "concordance/results_RB1/concordance_report.csv")
+    rb1 = df[df.gene == "RB1"]
+    assert len(rb1) == 1, "concordance/results_RB1/concordance_report.csv has no RB1 row."
+    r = next(rb1.itertuples())
+    assert int(r.ref_in_universe) > 0, (
+        "concordance/results_RB1/concordance_report.csv has an empty RB1 reference set, so "
+        "the walkthrough's worked example is no longer supported by the committed results."
+    )
+    doc = _debold(_doc("concordance/WALKTHROUGH_RB1_concordance_rebuild.md"))
+    _assert_in(doc, _row(r), "concordance/WALKTHROUGH_RB1_concordance_rebuild.md",
+               "concordance/results_RB1/concordance_report.csv")
+
+
 if __name__ == "__main__":
     failures = 0
     for name, fn in sorted(globals().items()):

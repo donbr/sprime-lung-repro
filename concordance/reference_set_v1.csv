@@ -1,0 +1,24 @@
+# reference_set_v1.csv — literature-blind concordance reference set, ALL FOUR genotypes (worked example)
+# Assembled from published genotype-selective synthetic-lethal / dependency evidence ONLY, blind to ΔpS'.
+# Inclusion rule: a druggable target with a published experimental demonstration that LOSS of the genotype
+#   confers SELECTIVE sensitivity/dependency in a cancer model, identified by PMID/DOI, AND with >=1 compound
+#   present in the PRISM 19Q4 library (otherwise the claim is real but untestable here — see notes below).
+# Grounding: PubMed (genotype-selectivity citation, verified 2026-09-02) + BioGRID ORCS (dependency sanity).
+# Frozen 2026-09-02, BEFORE reading ΔpS' for these compounds.
+#
+# UNTESTABLE-IN-LIBRARY (documented, NOT scored — 0 compounds in PRISM 19Q4):
+#   CDKN2A/MTAP co-deletion -> PRMT5 (Engstrom 2023, PMID 37552839, doi:10.1158/2159-8290.CD-23-0669)
+#   CDKN2A/MTAP co-deletion -> MAT2A (Kalev 2021, PMID 33450196, doi:10.1016/j.ccell.2020.12.010)
+#   These are the best-characterized CDKN2A-adjacent synthetic lethals but no PRMT5/MAT2A drug is in PRISM 19Q4.
+genotype,target,compound,pmid,doi,source_db,search_terms,date_frozen,inclusion_rationale
+RB1,AURKB,,30373918,10.1158/2159-8290.CD-18-0389,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND Aurora B AND synthetic lethal AND (SCLC OR lung)",2026-09-02,"Oser 2019: RB1-null SCLC hyperdependent on Aurora B (CRISPR SL screen)"
+RB1,AURKA,,30373917,10.1158/2159-8290.CD-18-0469,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND Aurora A AND synthetic lethal",2026-09-02,"Gong 2019: Aurora A inhibition synthetic-lethal with RB1 loss"
+RB1,PLK1,,29386107,10.1016/j.celrep.2018.01.022,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND PLK1 AND (synthetic lethal OR dependency)",2026-09-02,"Witkiewicz 2018: RB-loss drug screen — PLK1 selective for RB loss"
+RB1,CHEK1,,29386107,10.1016/j.celrep.2018.01.022,PubMed + BioGRID ORCS,"(RB1 OR retinoblastoma) AND (CHEK1 OR CHK1) AND (synthetic lethal OR replication stress)",2026-09-02,"Witkiewicz 2018: RB-loss drug screen — CHK inhibitors RB-selective in vitro and in vivo"
+PTEN,PIK3CB,,18755892,10.1073/pnas.0802655105,PubMed,"PTEN-deficient AND PIK3CB AND dependence",2026-09-02,"Wee 2008: PTEN-deficient cancers depend on PIK3CB (p110-beta), not PIK3CA"
+PTEN,AKT,,18755892,10.1073/pnas.0802655105,PubMed,"PTEN loss AND AKT dependence",2026-09-02,"Wee 2008 / canonical: PTEN loss drives PIK3CB->AKT pathway dependence"
+PTEN,PARP1,,20049735,10.1002/emmm.200900041,PubMed,"PTEN AND PARP AND synthetic lethal",2026-09-02,"Mendes-Pereira 2009: PTEN loss causes HR defect, sensitizes to PARP inhibition"
+CDKN2A,CDK4,,36346366,10.1158/0008-5472.CAN-22-0391,PubMed,"CDKN2A OR p16 loss AND CDK4/6 inhibitor sensitivity",2026-09-02,"Goodwin 2023: CDKN2A/p16 loss -> CDK4/6 pharmacologic rationale (CDK4/6i)"
+CDKN2A,CDK6,,36346366,10.1158/0008-5472.CAN-22-0391,PubMed,"CDKN2A OR p16 loss AND CDK4/6 inhibitor sensitivity",2026-09-02,"Goodwin 2023: CDKN2A/p16 loss -> CDK4/6 pharmacologic rationale (CDK4/6i)"
+TP53,WEE1,,38776912,10.1016/j.xcrm.2024.101578,PubMed,"TP53 mutant AND WEE1 AND (synthetic lethal OR sensitivity) AND NSCLC",2026-09-02,"Fukuda 2024: WEE1 inhibition selectively enhances apoptosis in TP53-mutant NSCLC"
+TP53,PLK1,,20571075,10.1158/1535-7163.MCT-10-0095,PubMed,"TP53 deficient AND PLK1 AND selective sensitivity",2026-09-02,"Degenhardt 2010: PLK1 inhibitor (GSK461364) sensitivity associated with p53 loss"

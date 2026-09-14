@@ -49,17 +49,38 @@ Do not assume a control exists because the review asks for it:
   for the main significance analysis (`bh_fdr` exists, but only inside `demeter_validation.py`);
   **M8** an RB1 × TP53 interaction term.
 
-`concordance/reference_seed_grounded.csv` has a provenance hole: 5 of its 7 rows carry neither PMID nor
-DOI, and `search_terms` is empty on all 7, though the protocol makes both mandatory. **That set is
-superseded** by `reference_set_2026-08-31_directional.csv` (93 rows, every row carrying a PMID or DOI, the
-query string, a freeze date and a rationale), which is the benchmark of record. The seed set and its results
-stay in the tree, labelled, because its TP53 p = 5.6e-08 collapsing to 0.51 against a real census is the
-clearest argument for why the census was needed.
+`concordance/reference_seed_grounded.csv` is the 7-row starter set and is **superseded** by
+`reference_set_2026-08-31_directional.csv` (93 rows, every row carrying a PMID or DOI, the query string, a
+freeze date and a rationale), which is the benchmark of record. The seed set and its results stay in the
+tree, labelled, because its TP53 p = 5.6e-08 collapsing to 0.51 against a real census is the clearest
+argument for why the census was needed. Quote the census, never the seed run.
+
+The seed set's own provenance hole — 5 of 7 rows carrying neither PMID nor DOI, `search_terms` empty on all
+7 — was narrowed by a re-documentation pass on 2026-09-13: 6 of 7 rows now carry a PMID and DOI, all 7 carry
+a distinct query string, and a `support_status` column grades each row `supported` /
+`supported-no-contrast` / `uncited` / `contradicted`. Two rows are deliberately *not* claimed as support and
+must not be "tidied up": PTEN→AKT1 is `uncited` (no paper found establishing PTEN-deficient-selective AKT1
+sensitivity), and TP53→KIF11 is `contradicted` — its PMID is counter-evidence, since Fujiwara 2018 reports
+the prognostic association in p53 **wild-type** cases, the opposite direction.
+`concordance/reference_template.csv` documents all 11 columns and the vocabulary.
+
+Two rules from that pass survived and apply to **every** reference set here, census included: **never
+overwrite `date_frozen`** (it is the audit trail that the set predates the ΔpS′ scoring — record later edits
+in `date_redocumented` instead), and **never source a selectivity claim to a BioGRID ORCS hit fraction**,
+which can establish pan-essentiality but never genotype-selectivity. What the pass did *not* do is make the
+seed set an independent census: it documented a set assembled earlier, retrospectively, and git cannot
+corroborate the 2026-07-05 freeze date — the reference set and the scored report both entered in the
+repository's *initial* commit (`02b06ce`), there are no tags, and the asserted freeze predates that commit by
+five weeks, so no ordering evidence exists here rather than merely being absent. That is precisely why B1's
+remedy rests on the 2026-08-31 census and its 2026-09-06 replication, whose freeze commits *are* checkable,
+and not on the seed set.
 
 ## Commands
 
-Commands below use `python` as the docs do; on this machine only `python3` is on PATH (numpy/pandas are
-already importable there). `run_all.py` shells out to `sys.executable`, so the stages stay consistent.
+Commands below use `python` as the docs do. On this machine run them with `/usr/bin/python3`: the `python3`
+first on PATH is `~/.local/bin/python3`, which shadows the system interpreter and has **no** numpy/pandas/scipy
+(`/usr/bin/python3` has pandas 2.3.3 and scipy 1.15.3). `run_all.py` shells out to `sys.executable`, so once
+you start a stage with the right interpreter the rest stay consistent.
 
 ```bash
 pip install -r requirements.txt       # requirements.txt is generated (uv export); see below
@@ -85,6 +106,9 @@ python concordance/census_agreement.py                     # census-to-census ag
 # web dashboard & automated browser verification
 cd dashboard && npm install && npm run dev            # local web app on http://localhost:5173/
 cd dashboard && node verify_ui.js                     # automated Playwright E2E UI & data tests
+
+# slide decks (both .pptx outputs are gitignored — regenerate them)
+node docs/build_addendum_deck.js                      # referee addendum; reads the committed CSVs
 
 # tests — plain asserts, no pytest in requirements.txt; runs without the gated data
 python tests/test_synthetic.py                        # what CI runs; prints "ALL PASSED"
@@ -176,6 +200,15 @@ figure in this file without updating its CSV (or the reverse) turns CI red; that
 `docs/scope.md` and `docs/README.md` are **not** under that check. Regenerating the results baseline therefore requires
 updating those tables in the same commit, or the build fails. Numbers the repo does not compute (the 4PL
 pathology percentages, the PRISM dilution scheme) are attributed inline and are not covered by the test.
+
+**The slide decks are the exception and the risk.** `tests/test_docs_numbers.py` reads `.md` files only, so
+no deck is under any check. The parent deck's four tables are hand-transcribed and can drift silently, and
+`docs/create_google_slides.gs` regenerates only slide 1 of its 11, so it cannot be rebuilt from this repo.
+`docs/build_addendum_deck.js` is the counter-example: it reads every figure out of the committed CSVs at
+build time. Note what that does and does not buy — a generated deck cannot drift from the CSV it reads, but
+nothing stops it reading the *wrong* CSV. It did exactly that once, quoting the superseded seed run after
+the census became the benchmark of record. Point any deck generator at
+`concordance/results/2026-08-31_blind/`, never at `concordance/results/concordance_report.csv`.
 
 ## Validation anchors
 

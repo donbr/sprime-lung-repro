@@ -16,3 +16,9 @@ venv/
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Generated decks — regenerate, don't commit.
+# The addendum rebuilds fully from its generator; the parent deck does NOT (see CLAUDE.md):
+# docs/create_google_slides.gs only emits slide 1 of its 11, so keep a copy outside the repo.
+docs/sprime_lung_repro_presentation.pptx
+docs/sprime_addendum.pptx

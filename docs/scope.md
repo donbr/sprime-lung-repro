@@ -129,13 +129,65 @@ complaint below. The gaps recorded here are therefore historical, and they are w
 close. See `concordance/BLIND_CENSUS_2026-08-31.md`.
 
 `concordance/reference_seed_grounded.csv` holds 7 rows: 5 for RB1, 1 for PTEN, 1 for TP53, and none for
-CDKN2A. Of those 7 rows, 5 carry neither a PMID nor a DOI, and the `search_terms` column is empty on all 7
-— even though the blind-assembly protocol described in `evidence.md` and `CONNECTORS.md` makes both fields
-mandatory: search terms and provenance are supposed to be recorded precisely so the reference set can be
-checked as having been assembled independently of this analysis's own output, not selected to match it.
-With those fields unfilled on most or all rows, that independence is asserted rather than demonstrated for
-this seed set. Those fields are load-bearing, not bookkeeping — the whole remedy for the manuscript's
-circularity problem rests on them.
+CDKN2A. The blind-assembly protocol described in `evidence.md` and `CONNECTORS.md` makes a PMID/DOI and a
+recorded `search_terms` string mandatory on every row: search terms and provenance are supposed to be
+recorded precisely so the reference set can be checked as having been assembled independently of this
+analysis's own output, not selected to match it. Those fields are load-bearing, not bookkeeping — the whole
+remedy for the manuscript's circularity problem rests on them.
+
+A re-documentation pass (`date_redocumented` 2026-09-13) narrowed that gap. A distinct, re-runnable query is
+now recorded on each of the 7 rows, and 6 of the 7 carry a PMID and DOI — 5 of them as support, and one
+(TP53→KIF11) as counter-evidence. The five supporting citations are the two Aurora rows (Gong 2019,
+PMID 30373917; Oser 2019, PMID 30373918), RB1→PLK1 and RB1→CHEK1 (both Nastase 2021, PMID 34580349,
+doi:10.1038/s41598-021-98414-w [L10]), and RB1→PARP1 (Zoumpoulidou 2021, PMID 34862364,
+doi:10.1038/s41467-021-27291-8 [L11]). The pass did **not** re-freeze the set: `date_frozen` remains
+2026-07-05 on every row, because that date is the audit trail showing the set predates the ΔpS′ scoring, and
+overwriting it would destroy the very independence B1 exists to demonstrate.
+
+That audit trail is an attestation, not a verified timestamp, and the distinction is load-bearing. The freeze
+date is a self-asserted column value: it predates this repository's initial commit (`02b06ce`, 2026-08-11) by
+five weeks, and that initial commit is where `reference_seed_grounded.csv` and the scored
+`concordance_report.csv` both first appear. The repository carries no tags. So the protocol's "commit with a
+timestamp / git tag" has neither, and no possible ordering evidence exists within this history — the claim
+that the set was assembled blind to ΔpS′ rests on the curator's word rather than on version control.
+Restoring `date_frozen` was still right, because overwriting it would have removed even the attestation; but
+an attestation is what it is, and it should not be read as a verified freeze.
+
+Each row now also carries a `support_status` — `supported`, `supported-no-contrast`, `uncited` or
+`contradicted` — so a reader does not have to infer the strength of a row from whether its `pmid` cell
+happens to be filled. The distinction matters: Zoumpoulidou 2021 reports an explicit genotype contrast
+(including engineered RB1 loss, with sensitivity exceeding BRCA-mutant backgrounds), whereas Nastase 2021
+reports RB1 deletion in 26% of cases *and* sub-micromolar PLK1/CHEK1-inhibitor responses without ever
+comparing RB1-deleted against RB1-intact cells. The latter establishes dependency but not *selective*
+dependency, which is the property this benchmark actually scores; both PLK1 and CHEK1 rows are therefore
+marked `supported-no-contrast`.
+
+`inclusion_rationale` now also carries a BioGRID ORCS hit fraction, separating rows labelled common-essential
+(PLK1 0.63, CHEK1 0.59, KIF11 0.60) from those labelled context-selective (PARP1 0.046, AKT1 0.037) by a
+factor of roughly 13–16. **That fraction is marginal across all ORCS screens, so it can establish
+pan-essentiality but never genotype-selectivity.** AURKA (0.50) and AURKB (0.61) accordingly sit in the high
+band despite the RB1-selective literature; the Aurora rows rest on their publications, not on ORCS, and no
+claim of selectivity should be sourced to an ORCS fraction.
+
+Because the pass is retrospective rather than blind assembly, it documents what the seed set already
+claimed; it does not make the set an independent census. Two rows carry no supporting citation, and both are
+findings rather than clerical gaps:
+
+- **PTEN→AKT1 (MK-2206) is `uncited`.** Three recorded queries over roughly 380 PubMed hits produced no study
+  establishing PTEN-deficient-selective sensitivity to AKT1 inhibition. ORCS shows AKT1 is context-selective
+  (0.037), but that is a marginal fact and does not tie the selectivity to PTEN. This is also the arm the
+  blind benchmark scores at p = 0.30. The row needs manual curation or removal.
+- **TP53→KIF11 (ispinesib) is `contradicted` rather than merely uncited.** Its PMID cell is populated with
+  Fujiwara 2018 (PMID 30049386, doi:10.1016/j.ebiom.2018.06.031 [L12]) as **counter-evidence**: that paper
+  describes a p53–miR-101 circuit repressing EG5 whose prognostic association is in p53 **wild-type** cases,
+  the opposite direction from the row's implied claim. With KIF11 pan-essential at 0.60, this independently
+  corroborates the caveat in `concordance/README.md`: TP53's p = 5.6e-08 reflects a common-essential target,
+  not genotype-selective biology.
+
+The provenance columns are documentation only — `concordance_enrichment.py` reads just `genotype`,
+`compound` and `target` — so the pass changed no computed figure, and
+`concordance/results/concordance_report.csv` is byte-identical before and after it
+(md5 `6f8c724e1986a7fc10edc7db1934263a`).
 
 There is a second, separate gap in that reference set, about resolution rather than provenance, and nothing
 in this repository closes it. A reference row names a *target*, not a compound, so
@@ -169,3 +221,14 @@ script in this repository.
 
 [L6] The Cancer Genome Atlas Research Network. Comprehensive genomic characterization of squamous cell lung
 cancers. *Nature* 2012;489(7417):519–525. PMID 22960745. doi:10.1038/nature11404
+
+[L10] Nastase A, Mandal A, Lu SK, et al. Integrated genomics point to immune vulnerabilities in pleural
+mesothelioma. *Scientific Reports* 2021;11(1):19138. PMID 34580349. doi:10.1038/s41598-021-98414-w
+
+[L11] Zoumpoulidou G, Alvarez-Mendoza C, Mancusi C, et al. Therapeutic vulnerability to PARP1,2 inhibition
+in RB1-mutant osteosarcoma. *Nature Communications* 2021;12(1):7064. PMID 34862364.
+doi:10.1038/s41467-021-27291-8
+
+[L12] Fujiwara Y, Saito M, Robles AI, et al. A Nucleolar Stress-Specific p53-miR-101 Molecular Circuit
+Functions as an Intrinsic Tumor-Suppressor Network. *EBioMedicine* 2018;33:33–48. PMID 30049386.
+doi:10.1016/j.ebiom.2018.06.031

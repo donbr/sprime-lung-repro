@@ -33,6 +33,14 @@ protocol.
 
 **Reports** — `RESULT_second_census_2026-09-06.md`, `SUPPL7_TABLE1_{RB1,PTEN,CDKN2A,TP53}.md`, `results/`.
 
+**Predecessor sets** (kept for provenance; **do not quote** — see the labelled sections below)
+- `reference_set_v1.csv` and `reference_set_RB1.csv` plus `CONCORDANCE_REBUILD_all_genotypes.md` and
+  `WALKTHROUGH_RB1_concordance_rebuild.md` — the 2026-09-02 PubMed-verified rebuild, with outputs in
+  `results_v1/` and `results_RB1/`. Superseded by the 2026-08-31 census: it is the smaller reference set and
+  its RB1 arm rests on 42 in-universe rows against the census's 94.
+- `OB_RESEARCH_competency_questions.md` — which biosciences-plugin competency questions map to this work,
+  and the BioGRID/STRING/PubMed/trials validation of the RB1×PARP1 exclusion.
+
 ## Run
 ```bash
 # the benchmark of record
@@ -81,6 +89,24 @@ targets), itself a finding about how noisy a single census is. See also
 
 **Three of four genotypes fail**, which is the evidence that the benchmark is not rigged: the same procedure
 that returns a positive for RB1 returns chance for PTEN, CDKN2A and TP53.
+
+## Superseded predecessor — the 2026-09-02 grounded set (`reference_set_v1.csv`)
+
+**Do not quote these numbers either.** A PubMed-verified rebuild that preceded the census of record and
+reached the same qualitative verdict from a smaller reference set. Source:
+`results_v1/concordance_report.csv`. Full write-up: `CONCORDANCE_REBUILD_all_genotypes.md`.
+
+| genotype | reference (in universe) | candidates | universe | recovered | recovery | hypergeometric p | permutation p |
+|---|---|---|---|---|---|---|---|
+| RB1 | 42 | 94 | 1360 | 8 | 19% | 0.0064 | 0.0067 |
+| TP53 | 9 | 16 | 1402 | 1 | 11% | 0.098 | 0.098 |
+| PTEN | 22 | 97 | 883 | 3 | 14% | 0.44 | 0.44 |
+| CDKN2A | 12 | 48 | 1402 | 0 | 0% | 1.0 | 1.0 |
+
+It agrees with the census on the only claim either supports — RB1 clears chance, the other three do not —
+and it independently reached the KIF11 exclusion that drops TP53 off the seed run's p = 5.6e-08. Where the
+two differ, quote the census: it carries more than twice the RB1 rows, and its scoring run is the one
+`build_suppl7_table1.py` and `compare_censuses.py` are wired to.
 
 ## Superseded first pass — the 7-row starter set (illustrative only)
 
