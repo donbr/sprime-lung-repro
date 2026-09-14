@@ -182,7 +182,9 @@ pptx.title = "S′ Reproduction — Referee Addendum";
       options: { bold: true, color: TEXT, fontSize: 13.5, breakLine: true } },
     ...by("uncited").map(r => ({
       text: `UNCITED · ${r.genotype} → ${r.target} (${r.compound}) — no paper establishes ` +
-            `${r.genotype}-deficient-selective sensitivity after 3 recorded queries. Same arm the benchmark scores at p = 0.30.`,
+            `${r.genotype}-deficient-selective sensitivity after 3 recorded queries. Same arm the benchmark ` +
+            `scores at p = ${fmtP((readCsv("concordance/results/concordance_report.csv")
+              .find(x => x.gene === r.genotype) || {}).hyperg_p)}.`,
       options: { fontSize: 11.5, color: AMBER, breakLine: true } })),
     ...by("contradicted").map(r => ({
       text: `CONTRADICTED · ${r.genotype} → ${r.target} (${r.compound}) — its sole hit (PMID ${r.pmid}) reports the ` +
@@ -218,9 +220,15 @@ pptx.title = "S′ Reproduction — Referee Addendum";
 {
   const dem = readCsv("results/demeter_validation.csv");
   const rb1 = dem.filter(r => r.genotype === "RB1").sort((a, b) => num(a.delta_pD) - num(b.delta_pD));
+  // Two different statistics live in this table, so keep them straight:
+  //   q_two            - two-sided, the conservative one; what the q column shows.
+  //   mutant_selective - demeter_validation.py's own flag: dpD < 0 AND mutant-direction q_mut < 0.10.
+  // They are NOT the same cut. Read Status off the flags rather than inferring it from q_two, or a
+  // row failing both flags would be mislabelled "WT-selective (control)".
   const sig = r => num(r.q_two) <= 0.05;
-  const status = r => !sig(r) ? "not significant"
-    : (r.mutant_selective === "True" ? "mutant-selective" : "WT-selective (control)");
+  const status = r => r.mutant_selective === "True" ? "mutant-selective"
+    : r.wt_selective === "True" ? "WT-selective (control)"
+    : "not flagged";
   // Reference membership must be looked up across ALL genotypes, not just RB1: AKT1 is in the
   // reference set under PTEN, and scoping this to RB1 wrongly reports it as absent.
   const ref = readCsv("concordance/reference_seed_grounded.csv");
@@ -229,7 +237,7 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   const refShown = rb1.filter(r => rb1Refs.includes(r.target));
   const refSig = refShown.filter(sig).length;
   const wrongWay = refShown.filter(r => num(r.delta_pD) > 0);          // WT-selective direction
-  const sigMut = rb1.filter(r => sig(r) && r.mutant_selective === "True");
+  const sigMut = rb1.filter(r => r.mutant_selective === "True");   // the flag, not a 0.05 cut
   const sigAbsent = sigMut.filter(r => !refMap.has(r.target));
   const sigElsewhere = sigMut.filter(r => refMap.has(r.target));
   const nWt = rb1[0].n_wt, nMut = rb1[0].n_mut;
@@ -270,7 +278,7 @@ pptx.title = "S′ Reproduction — Referee Addendum";
             `hypothesis the reference set encodes — though none significantly. That includes PARP1, the ` +
             `strongest-evidence row on the drug-response side.\n`,
       options: { color: TEXT, fontSize: 10.5, breakLine: true } },
-    { text: `Of the ${sigMut.length} significant mutant-selective targets, ${sigAbsent.length} ` +
+    { text: `Of the ${sigMut.length} targets flagged mutant-selective (ΔpD < 0 with mutant-direction q < 0.10), ${sigAbsent.length} ` +
             `(${sigAbsent.map(r => r.target).join(", ")}) are absent from the reference set. The fourth, ` +
             `${sigElsewhere.map(r => r.target).join(", ")}, IS present — but assigned to ` +
             `${sigElsewhere.map(r => refMap.get(r.target).genotype).join(", ")}, and it is the one row we could not cite. ` +
@@ -284,7 +292,9 @@ pptx.title = "S′ Reproduction — Referee Addendum";
   ], { x: 0.78, y: 5.09, w: 11.74, h: 1.60, fontFace: BODY, margin: 0, valign: "top" });
 
   sourceNote(s, "Source: results/demeter_validation.csv (committed), via demeter_validation.py on DEMETER2 v6. " +
-    "q is Benjamini–Hochberg across the 12 targets within the genotype; CDKN2A and TP53 carry 12 rows each.");
+    "The q column is two-sided (q_two), Benjamini–Hochberg across the 12 targets within the genotype. Status is " +
+    "demeter_validation.py's own flag: ΔpD < 0 with mutant-direction q_mut < 0.10, not a 0.05 cut — q_mut tests only " +
+    "'mutant more dependent', so it scores a real WT-selective effect as 1.0. CDKN2A and TP53 carry 12 rows each.");
 }
 
 // ---------------------------------------------------------------- slide 4
